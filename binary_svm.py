@@ -4,7 +4,6 @@ import numpy as  np
 class KernelSVC:
     
     def __init__(self, C, kernel, epsilon = 1e-3):
-        self.type = 'non-linear'
         self.C = C                               
         self.kernel = kernel        
         self.alpha = None
