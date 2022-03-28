@@ -5,13 +5,28 @@ class RBF:
         self.sigma = sigma  ## the variance of the kernel
         #self.k = None
         
-    def kernel(self,X,Y):
+    def kernel(self,X,Y = None):
         ## Input vectors X and Y of shape Nxd and Mxd
-        
         # difference between all vectors X and Y
-        xmy = X[:, None, :] - Y[None, :, :]
-        #self.k = xmy
-        return np.exp(-1/2*np.square(np.linalg.norm(xmy, axis=2)/self.sigma))
+
+        if Y is None:
+          norm_diff = np.zeros((N, N))
+          for i in range(N):
+            if i%100 == 0:
+              print(i/N)
+            for j in range(i + 1, N):
+              norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
+          norm_diff = norm_diff + norm_diff.T
+        else:
+            N, d = X.shape
+            M, dy = Y.shape
+            if not d == dy:
+              raise ValueError("X and Y don't have the same dimension ")
+            norm_diff = np.zeros((N, N))
+            for i in range(N):
+              for j in range(M):
+                norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
+        return np.exp(-1/2*np.square(norm_diff/self.sigma))
 
 class Linear:
     def __init__(self):
