@@ -17,7 +17,7 @@ class DataLoader:
         self.target_train = self.target[:int(self.N*prop)]
 
         self.dataset_test  = self.dataset[int(self.N*prop):, :]
-        self.target_test  = self.target[int(self.N*prop):, :]
+        self.target_test  = self.target[int(self.N*prop):]
 
         self.shuffle = shuffle
         self.prop= prop
