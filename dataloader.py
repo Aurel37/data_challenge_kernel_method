@@ -22,7 +22,7 @@ class DataLoader:
     def __next__(self):
         if self.it + 1 < self.N:
             self.it += 1
-            return self.dataset[self.it], self.target[self.it]
+            return self.dataset[self.it, :], self.target[self.it]
         else:
             raise StopIteration
     
