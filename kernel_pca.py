@@ -11,12 +11,16 @@ class KernelPCA:
         self.n_dim = n_dim
     
     def center_kernel(self, X):
+        """center kernel (mean) before pca
+        """
         N, _ = X.shape
         kernel_mat = self.kernel(X, X)
         ones_N = 1/N*np.ones((N, N))
         return kernel_mat - ones_N@kernel_mat - kernel_mat@ones_N + ones_N@kernel_mat@ones_N
     
     def PCA(self, X):
+        """compute pca
+        """
         K = self.center_kernel(X)
         eigenvals, eigenvects = eigh(K)
 
@@ -35,6 +39,10 @@ class KernelPCA:
         return np.dot(K, alpha)
 
     def project(self):
+        """return the result of the pca projection
+        """
         self.dataloader.dataset = self.PCA(self.dataloader.dataset)
+        self.dataloader.K = self.kernel(self.dataloader.dataset_train, self.dataloader.dataset_train)
+        self.dataloader.kernel = self.kernel
         return self.dataloader
         

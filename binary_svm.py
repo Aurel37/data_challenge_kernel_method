@@ -3,7 +3,7 @@ import numpy as  np
 
 class KernelSVC:
     
-    def __init__(self, C, kernel, epsilon = 1e-3):
+    def __init__(self, C, kernel, epsilon = 1e-15):
         self.C = C                               
         self.kernel = kernel        
         self.alpha = None
@@ -11,14 +11,13 @@ class KernelSVC:
         self.epsilon = epsilon
         self.norm_f = None
     
-    def fit(self, X, y):
+    def fit(self, X, y, K):
         #### You might define here any variable needed for the rest of the code
         N = len(y)
         diag_y = np.zeros((N,N))
         for i in range(N):
             diag_y[i,i] = y[i]
         one = np.ones(N)
-        K = self.kernel(X, X)
         # Lagrange dual problem
         
         def loss(alpha):
@@ -34,12 +33,23 @@ class KernelSVC:
 
         fun_eq = lambda alpha: alpha.T@one    
         jac_eq = lambda alpha: one
+        func_eq_coby =  lambda alpha: -alpha.T@one
+        jac_eq_coby = lambda alpha: -one
         fun_ineq_0 = lambda alpha: -alpha*y + self.C*one
         jac_ineq_0 = lambda alpha:  -diag_y
         fun_ineq_1 = lambda alpha: alpha*y
         jac_ineq_1 = lambda alpha:  diag_y
         
-        constraints = ({'type': 'eq',  'fun': fun_eq, 'jac': jac_eq},
+        # change the constraint for the optimizer : cobyla doesn't use equality 
+        constraints_slsq = ({'type': 'eq',  'fun': fun_eq, 'jac': jac_eq},
+                       {'type': 'ineq', 
+                        'fun': fun_ineq_0 , 
+                        'jac': jac_ineq_0}, 
+                       {'type': 'ineq', 
+                        'fun': fun_ineq_1, 
+                        'jac': jac_ineq_1}, 
+                      )
+        constraints_cobyla = ({'type': 'ineq',  'fun': fun_eq, 'jac': jac_eq}, {'type': 'ineq',  'fun': func_eq_coby, 'jac': jac_eq_coby},
                        {'type': 'ineq', 
                         'fun': fun_ineq_0 , 
                         'jac': jac_ineq_0}, 
@@ -50,18 +60,15 @@ class KernelSVC:
 
         optRes = optimize.minimize(fun=lambda alpha: loss(alpha),
                                    x0=np.ones(N), 
-                                   method='SLSQP', 
+                                   method='COBYLA', 
                                    jac=lambda alpha: grad_loss(alpha), 
-                                   constraints=constraints)
+                                   constraints=constraints_cobyla)
         self.alpha = optRes.x
-        
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]
         y_support = y[supportIndices]
         self.support = X[supportIndices] #'''------------------- A matrix with each row corresponding to a support vector ------------------'''
-        
-        K = self.kernel(self.support, self.support)
         
         # compute b
         
@@ -69,9 +76,6 @@ class KernelSVC:
         # the complementary slackness conditions
         kkt_index = np.argmax((self.alpha > 0)*(self.alpha < y_support*self.C))
         self.b = y_support[kkt_index] - self.separating_function(np.array([self.support[kkt_index]]))
-        
-        # compute the norm of f
-        self.norm_f = np.sqrt(self.alpha.T@K@self.alpha)
         
     ### Implementation of the separting function $f$ 
     def separating_function(self,x):
