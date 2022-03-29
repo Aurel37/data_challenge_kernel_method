@@ -54,13 +54,9 @@ class MultiKernelSVC:
                     # side is the side from which the datapoints belongs
                     # for prediction multiply by side
                     if cl not in self.SVMs.keys():
-                        self.SVMs[cl] = [{"side":1, "svc":svc}]
+                        self.SVMs[cl] = [svc]
                     else:
-                        self.SVMs[cl].append({"side":1, "svc":svc})
-                    if cl_available not in self.SVMs.keys():
-                        self.SVMs[cl_available] = [{"side":-1, "svc":svc}]
-                    else:
-                        self.SVMs[cl_available].append({"side":-1, "svc":svc})
+                        self.SVMs[cl].append(svc)
                 # "delete" the cl studied
                 class_available = np.arange(cl+1, self.class_num)
 
@@ -74,7 +70,9 @@ class MultiKernelSVC:
         prediction = np.zeros(n)
         # one vs all prediction
         for cl in range(self.class_num):
-            for svm in self.SVMs[cl]:
-                cl_prediction = svm["side"]*svm["svc"].predict(X)
-                prediction[cl_prediction == 1] = cl
+            prediction_cl = np.array([True for _ in range(n)])
+            for svc in self.SVMs[cl]:
+                cl_prediction = svc.predict(X)
+                prediction_cl = prediction_cl*(cl_prediction == 1)
+            prediction[prediction_cl == 1] = cl
         return prediction
