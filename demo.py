@@ -16,9 +16,9 @@ Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 # and test with a proportion of 0.8 here
 
 Xtr_gray = transform_to_gray(Xtr)
-dataloader = DataLoader(Xtr_gray[:200, :], Ytr[:200], 0.8, True)
+dataloader = DataLoader(Xtr_gray[:1000, :], Ytr[:1000], 0.8, True)
 # perform pca
-pca = KernelPCA(dataloader, RBF().kernel, 50)
+pca = KernelPCA(dataloader, Linear().kernel, 50)
 # project and retrieve the new dataloader with selected feature
 dataloader_pca = pca.project()
 # multi svc

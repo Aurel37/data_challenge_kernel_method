@@ -4,7 +4,7 @@ import cvxpy as cp
 
 class KernelSVC:
     
-    def __init__(self, C, kernel, epsilon = 1e-15):
+    def __init__(self, C, kernel, epsilon = 1e-3):
         self.C = C                               
         self.kernel = kernel        
         self.alpha = None
@@ -25,7 +25,6 @@ class KernelSVC:
         prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, y@alpha - self.C*one <= 0, -y@alpha  <= 0])
         prob.solve()
         self.alpha = alpha.value
-
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]
@@ -49,4 +48,8 @@ class KernelSVC:
     def predict(self, X):
         """ Predict y values in {-1, 1} """
         d = self.separating_function(X)
+        #print(f"alph = {self.support}")
+        #print(f"d = {d}")
+        #print(f" b = {self.b}")
+        #print(f"pred= {2 * (d+self.b > 0) - 1}")
         return 2 * (d+self.b > 0) - 1
