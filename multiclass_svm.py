@@ -85,6 +85,7 @@ class MultiKernelSVC:
                 cl_prediction = svc.predict(X)
                 prediction_boolean = prediction_boolean*(cl_prediction == 1)
             prediction[prediction_boolean == 1] = cl
+            print(prediction)
             #print(prediction_boolean)
             #print(prediction)
         return prediction

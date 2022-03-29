@@ -48,8 +48,4 @@ class KernelSVC:
     def predict(self, X):
         """ Predict y values in {-1, 1} """
         d = self.separating_function(X)
-        #print(f"alph = {self.support}")
-        #print(f"d = {d}")
-        #print(f" b = {self.b}")
-        print(f"pred= {2 * (d+self.b > 0) - 1}")
         return 2 * (d+self.b > 0) - 1
