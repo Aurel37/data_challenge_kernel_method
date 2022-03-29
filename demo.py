@@ -3,6 +3,7 @@ from kernel_pca import KernelPCA
 from dataloader import DataLoader
 from kernel import Linear, RBF
 from multiclass_svm import MultiKernelSVC
+from utils import transform_to_gray
 
 import numpy as np
 import pandas as pd
@@ -14,8 +15,8 @@ Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 # load data, DataLoader automatically divide the dataset in train
 # and test with a proportion of 0.8 here
 
-
-dataloader = DataLoader(Xtr, Ytr, 0.8, True)
+Xtr_gray = transform_to_gray(Xtr)
+dataloader = DataLoader(Xtr_gray[:100, :], Ytr[:100], 0.8, True)
 # perform pca
 pca = KernelPCA(dataloader, RBF().kernel, 50)
 # project and retrieve the new dataloader with selected feature
