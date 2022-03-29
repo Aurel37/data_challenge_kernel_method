@@ -70,7 +70,7 @@ class MultiKernelSVC:
     
     def predict(self, X):
         n, _ = X.shape
-        prediction = np.zeros(n)
+        prediction = -np.ones(n)
         # one vs one prediction
         # class one is not in there
         for cl in range(self.class_num-1):
@@ -84,8 +84,7 @@ class MultiKernelSVC:
                 #print(svc.alpha)
                 cl_prediction = svc.predict(X)
                 prediction_boolean = prediction_boolean*(cl_prediction == 1)
-            prediction[prediction_boolean == 1] = cl
-            print(prediction)
+            prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
             #print(prediction_boolean)
             #print(prediction)
         return prediction
