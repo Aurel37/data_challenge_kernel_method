@@ -22,10 +22,10 @@ class RBF:
             M, dy = Y.shape
             if not d == dy:
               raise ValueError("X and Y don't have the same dimension ")
-            norm_diff = np.zeros((N, N))
+            norm_diff = np.zeros((N, M))
             for i in range(N):
               for j in range(M):
-                norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
+                norm_diff[i, j] = np.linalg.norm(X[i, :] - Y[j, :])
         return np.exp(-1/2*np.square(norm_diff/self.sigma))
 
 class Linear:
