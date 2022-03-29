@@ -21,6 +21,7 @@ class MultiKernelSVC:
         """train the multicclass svms using one vs all
         """
         for cl in range(self.class_num):
+            print(f"cl = {cl}")
             svc = KernelSVC(self.C, self.kernel, self.epsilon)
             target = self.dataloader.target_train.copy()
             target[self.dataloader.target_train == cl] = 1

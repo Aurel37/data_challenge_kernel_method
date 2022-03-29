@@ -10,22 +10,23 @@ class RBF:
         # difference between all vectors X and Y
 
         if Y is None:
-          norm_diff = np.zeros((N, N))
-          for i in range(N):
-            if i%100 == 0:
-              print(i/N)
-            for j in range(i + 1, N):
-              norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
-          norm_diff = norm_diff + norm_diff.T
+            N, d = X.shape
+            norm_diff = np.zeros((N, N))
+            for i in range(N):
+                if i%100 == 0:
+                    print(i/N)
+                for j in range(i + 1, N):
+                    norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
+            norm_diff = norm_diff + norm_diff.T
         else:
             N, d = X.shape
             M, dy = Y.shape
             if not d == dy:
-              raise ValueError("X and Y don't have the same dimension ")
+                raise ValueError("X and Y don't have the same dimension ")
             norm_diff = np.zeros((N, M))
             for i in range(N):
-              for j in range(M):
-                norm_diff[i, j] = np.linalg.norm(X[i, :] - Y[j, :])
+                for j in range(M):
+                    norm_diff[i, j] = np.linalg.norm(X[i, :] - Y[j, :])
         return np.exp(-1/2*np.square(norm_diff/self.sigma))
 
 class Linear:

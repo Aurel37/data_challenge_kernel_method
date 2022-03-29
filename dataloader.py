@@ -17,6 +17,7 @@ class DataLoader:
         self.K = None
         if shuffle:
             arange = np.arange(self.N)
+            np.random.shuffle(arange)
             self.dataset = self.dataset[arange, :]
             self.target = self.target[arange]
 
