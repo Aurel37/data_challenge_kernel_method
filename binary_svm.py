@@ -1,5 +1,6 @@
 from scipy import optimize
 import numpy as  np
+import cvxpy as cp
 
 class KernelSVC:
     
@@ -18,52 +19,13 @@ class KernelSVC:
         for i in range(N):
             diag_y[i,i] = y[i]
         one = np.ones(N)
+
         # Lagrange dual problem
-        
-        def loss(alpha):
-            return  -2*alpha.T@y+alpha.T@K@alpha
+        alpha = cp.Variable(N)
+        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, y@alpha - self.C*one <= 0, -y@alpha  <= 0])
+        prob.solve()
+        self.alpha = alpha.value
 
-        # Partial derivate of Ld on alpha
-        def grad_loss(alpha):
-            return -2*y + 2*K@alpha
-
-        # Constraints on alpha of the shape :
-        # -  d - C*alpha  = 0
-        # -  b - A*alpha >= 0
-
-        fun_eq = lambda alpha: alpha.T@one    
-        jac_eq = lambda alpha: one
-        func_eq_coby =  lambda alpha: -alpha.T@one
-        jac_eq_coby = lambda alpha: -one
-        fun_ineq_0 = lambda alpha: -alpha*y + self.C*one
-        jac_ineq_0 = lambda alpha:  -diag_y
-        fun_ineq_1 = lambda alpha: alpha*y
-        jac_ineq_1 = lambda alpha:  diag_y
-        
-        # change the constraint for the optimizer : cobyla doesn't use equality 
-        constraints_slsq = ({'type': 'eq',  'fun': fun_eq, 'jac': jac_eq},
-                       {'type': 'ineq', 
-                        'fun': fun_ineq_0 , 
-                        'jac': jac_ineq_0}, 
-                       {'type': 'ineq', 
-                        'fun': fun_ineq_1, 
-                        'jac': jac_ineq_1}, 
-                      )
-        constraints_cobyla = ({'type': 'ineq',  'fun': fun_eq, 'jac': jac_eq}, {'type': 'ineq',  'fun': func_eq_coby, 'jac': jac_eq_coby},
-                       {'type': 'ineq', 
-                        'fun': fun_ineq_0 , 
-                        'jac': jac_ineq_0}, 
-                       {'type': 'ineq', 
-                        'fun': fun_ineq_1, 
-                        'jac': jac_ineq_1}, 
-                      )
-
-        optRes = optimize.minimize(fun=lambda alpha: loss(alpha),
-                                   x0=np.ones(N), 
-                                   method='COBYLA', 
-                                   jac=lambda alpha: grad_loss(alpha), 
-                                   constraints=constraints_cobyla)
-        self.alpha = optRes.x
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]
