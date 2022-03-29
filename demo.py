@@ -16,13 +16,13 @@ Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 # and test with a proportion of 0.8 here
 
 Xtr_gray = transform_to_gray(Xtr)
-dataloader = DataLoader(Xtr_gray[:100, :], Ytr[:100], 0.8, True)
+dataloader = DataLoader(Xtr_gray[:200, :], Ytr[:200], 0.8, True)
 # perform pca
 pca = KernelPCA(dataloader, RBF().kernel, 50)
 # project and retrieve the new dataloader with selected feature
 dataloader_pca = pca.project()
 # multi svc
-multi_svc = MultiKernelSVC(1, dataloader_pca, 10)
-multi_svc.train()
+multi_svc = MultiKernelSVC(1, dataloader_pca, 10, one_to_one=True)
+multi_svc.fit()
 accuracy = multi_svc.accuracy(dataloader_pca.dataset_test, dataloader_pca.target_test)
 print(f"accuracy = {accuracy}")
