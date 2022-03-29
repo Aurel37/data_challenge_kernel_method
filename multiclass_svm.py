@@ -5,7 +5,7 @@ class MultiKernelSVC:
     """Multi Class kernel SVC
     """
 
-    def __init__(self, C, dataloader, class_num, one_to_one=False, epsilon = 1e-2):
+    def __init__(self, C, dataloader, class_num, one_to_one=False, epsilon = 1e-4):
         self.C = C 
         # kernel should be a function here                          
         self.kernel = dataloader.kernel    
@@ -37,8 +37,6 @@ class MultiKernelSVC:
             for cl in range(self.class_num):
                 print(f"\r cl = {cl}", end="")
                 for cl_available in class_available:
-                    print(f"cl available = {cl_available}")
-                    n, _ =  self.dataloader.dataset_train.shape
                     posi = np.argwhere(self.dataloader.target_train == cl).T
                     nega = np.argwhere(self.dataloader.target_train == cl_available).T
                     index = np.concatenate((posi[0], nega[0]))
@@ -52,6 +50,7 @@ class MultiKernelSVC:
                     np.random.shuffle(arange)
                     target = target[arange]
                     train_set = train_set[arange, :]
+                    # retrieve the sub matrix
                     kernel_ij = self.K[index,:][:,index]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target, kernel_ij)
@@ -60,7 +59,7 @@ class MultiKernelSVC:
                         self.SVMs[cl] = [svc]
                     else:
                         self.SVMs[cl].append(svc)
-                # "delete" the cl studied
+                # "delete" the cl that will be studied
                 current_cl  += 1
                 class_available = np.arange(current_cl, self.class_num)
 
@@ -79,15 +78,12 @@ class MultiKernelSVC:
             # for a vector to be on a certain
             # class, it must be detected at one
             # for all svc's of the class i
-            i = 0
             # this doesn't work only ones predicted 
             # this is ABSURD 
             for svc in self.SVMs[cl]:
                 #print(svc.alpha)
                 cl_prediction = svc.predict(X)
-                i+=1
                 prediction_boolean = prediction_boolean*(cl_prediction == 1)
-            #print(f"i = {i} !")
             prediction[prediction_boolean == 1] = cl
             #print(prediction_boolean)
             #print(prediction)
