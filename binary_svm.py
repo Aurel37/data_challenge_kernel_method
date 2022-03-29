@@ -22,7 +22,7 @@ class KernelSVC:
 
         # Lagrange dual problem
         alpha = cp.Variable(N)
-        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, y@alpha - self.C*one <= 0, -y@alpha  <= 0])
+        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, diag_y@alpha - self.C*one <= 0, -diag_y@alpha  <= 0])
         prob.solve()
         self.alpha = alpha.value
         # support indices
