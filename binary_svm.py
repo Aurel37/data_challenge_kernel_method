@@ -4,7 +4,7 @@ import cvxpy as cp
 
 class KernelSVC:
     
-    def __init__(self, C, kernel, epsilon = 1e-15):
+    def __init__(self, C, kernel, epsilon = 1e-3):
         self.C = C                               
         self.kernel = kernel        
         self.alpha = None
@@ -22,10 +22,9 @@ class KernelSVC:
 
         # Lagrange dual problem
         alpha = cp.Variable(N)
-        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, y@alpha - self.C*one <= 0, -y@alpha  <= 0])
+        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, diag_y@alpha - self.C*one <= 0, -diag_y@alpha  <= 0])
         prob.solve()
         self.alpha = alpha.value
-
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]

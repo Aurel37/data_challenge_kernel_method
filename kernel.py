@@ -33,8 +33,13 @@ class Linear:
     def __init__(self):
         self.k = None
     
-    def kernel(self,X,Y):
+    def kernel(self,X,Y=None):
         # matrixes of inner products
-        x_tens_y = X[:,:]@Y[:, :].T
-        self.k = x_tens_y
-        return x_tens_y
+        if Y is not None:
+            x_tens_y = X[:,:]@Y[:, :].T
+            self.k = x_tens_y
+            return x_tens_y
+        else:
+            x_tens_y = X[:,:]@X[:, :].T
+            self.k = x_tens_y
+            return x_tens_y

@@ -46,7 +46,7 @@ class DataLoader:
         self._target = new_target.copy()
         self.target_train = self._target[:int(self.N*self.prop)]
         self.target_test  = self._target[int(self.N*self.prop):]
-    
+
     def copy(self):
         """copy the dataloader properly
         """
