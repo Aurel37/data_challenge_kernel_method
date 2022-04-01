@@ -1,5 +1,6 @@
 import numpy as np
 from binary_svm import KernelSVC
+import time
 
 class MultiKernelSVC:
     """Multi Class kernel SVC
@@ -13,7 +14,8 @@ class MultiKernelSVC:
         self.alpha = None
         self.support = None
         self.epsilon = epsilon
-        self.SVMs = {} if one_to_one else []
+        #self.SVMs = {} if one_to_one else []
+        self.SVMs = []
         self.dataloader = dataloader
         self.class_num = class_num
         self.one_to_one = one_to_one
@@ -33,38 +35,48 @@ class MultiKernelSVC:
                 self.SVMs.append(svc)
         else:
             # one vs one
-            current_cl = 1
-            class_available = np.arange(current_cl, self.class_num)
-            for cl in range(self.class_num):
-                print(f"\r cl = {cl}", end="")
-                for cl_available in class_available:
-                    posi = np.argwhere(self.dataloader.target_train == cl).T
-                    nega = np.argwhere(self.dataloader.target_train == cl_available).T
-                    index = np.concatenate((posi[0], nega[0]))
+            # current_cl = 1
+            # class_available = np.arange(current_cl, self.class_num)
+            print("\n Begin Fit SVM oVo")
+            for class_i  in range(self.class_num):
+                print(f" \r cl = {class_i}", end="")
+                for class_j in range(class_i + 1, self.class_num):
+
+                    posi = np.argwhere(self.dataloader.target_train == class_j)[:, 0]
+                    nega = np.argwhere(self.dataloader.target_train == class_i)[:, 0]
+                    target = self.dataloader.target_train.copy()
+                    target[posi] = 1
+                    target[nega] = -1
+                    index = np.concatenate((posi, nega))
                     train_set = self.dataloader.dataset_train[index, :]
-                    n_1 = len(posi[0])
-                    n_2 = len(nega[0])
-                    target = np.zeros(n_1 + n_2)
-                    target[:n_1] = 1
-                    target[n_1:] = -1
-                    arange = np.arange(n_1+n_2)
-                    np.random.shuffle(arange)
-                    target = target[arange]
-                    train_set = train_set[arange, :]
+
+                    target_subarray = target[index]
+                    # n_1 = len(posi[0])
+                    # n_2 = len(nega[0])
+                    # target = np.zeros(n_1 + n_2)
+                    # target[:n_1] = 1
+                    # target[n_1:] = -1
+                    # arange = np.arange(n_1+n_2)
+                    # #np.random.shuffle(arange)
+                    # target = target[arange]
+                    # train_set = train_set[arange, :]
                     # retrieve the sub matrix
                     kernel_ij = self.K[index,:][:,index]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
-                    svc.fit(train_set, target, kernel_ij)
-                    
-                    if cl not in self.SVMs.keys():
-                        self.SVMs[cl] = [svc]
-                    else:
-                        self.SVMs[cl].append(svc)
+                    svc.fit(train_set, target_subarray, kernel_ij)
+                    accuracy = svc.accuracy(train_set, target_subarray)
+                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    self.SVMs.append(svc)
+                    # if cl not in self.SVMs.keys():
+                    #     self.SVMs[cl] = [svc]
+                    # else:
+                    #     self.SVMs[cl].append(svc)
                 # "delete" the cl that will be studied
-                current_cl  += 1
-                class_available = np.arange(current_cl, self.class_num)
-        accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
-        print(f"accuracy training : {accuracy}")
+                # current_cl  += 1
+                # class_available = np.arange(current_cl, self.class_num)
+        
+        # accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
+        # print(f"accuracy training : {accuracy}")
 
     def accuracy(self, X, y):
         n, _ = X.shape
@@ -72,30 +84,62 @@ class MultiKernelSVC:
         return np.sum(prediction == y)/n
     
     def predict(self, X):
-        n, _ = X.shape
-        prediction = -np.ones(n)
-        # one vs one prediction
-        # class one is not in there
-        if not self.one_to_one:
+        ### Inspired by the function of SckitLean for OvR Decision Function
+        if self.one_to_one:
+            print(" \n Begin predict from oVo to oVr")
+            n, _ = X.shape
+            predictions_oVo = np.zeros((n, len(self.SVMs)))
+            scores_oVo = np.zeros((n, len(self.SVMs)))
+
+            predictions = np.zeros((n, self.class_num))
+            scores = np.zeros((n, self.class_num))
+
+            current_index = 0
+            for class_i  in range(self.class_num):
+                    print(f"\n \r cl = {class_i}", end="")
+                    for class_j in range(class_i + 1, self.class_num):
+                        svc = self.SVMs[current_index]
+                        time0 = time.time()
+                        predictions_oVo[:, current_index], scores_oVo[:, current_index] = svc.predict(X, return_score = True)
+                        time1 = time.time()
+                        print('Temps de calcul de la prédiction {}'.format(time1 - time0))
+                        scores[:, class_i] -= scores_oVo[:, current_index]
+                        scores[:, class_j] += scores_oVo[:, current_index]
+                        predictions[predictions_oVo[:, current_index] == -1, class_i] += 1
+                        predictions[predictions_oVo[:, current_index] == 1, class_j] += 1
+                        current_index += 1
+
+
+            # Here, we have for each samples the number of votes per class. 
+            # We will use the scores to solve equality problems 
+            # So, put scores in [-1/3; 1/3] so that is does not change the number 
+            # of votes but it will influence in case of equality
+
+            scores /= (3*(np.abs(scores) + 1))
+
+            predictions = predictions + scores
+            return np.argmax(predictions, axis= 1)
+
+        else:
             for cl in range(self.class_num):
                 cl_prediction = self.SVMs[cl].predict(X)
                 prediction[cl_prediction == 1] = cl
-        else:
-            for cl in range(self.class_num-1):
-                prediction_boolean = np.array([True for _ in range(n)])
-                # for a vector to be on a certain
-                # class, it must be detected at one
-                # for all svc's of the class i
-                # this doesn't work only ones predicted 
-                # this is ABSURD 
-                support = np.zeros(())
-                for svc in self.SVMs[cl]:
-                    #print(svc.alpha)
+        # else:
+        #     for cl in range(self.class_num-1):
+        #         prediction_boolean = np.array([True for _ in range(n)])
+        #         # for a vector to be on a certain
+        #         # class, it must be detected at one
+        #         # for all svc's of the class i
+        #         # this doesn't work only ones predicted 
+        #         # this is ABSURD 
+        #         support = np.zeros(())
+        #         for svc in self.SVMs[cl]:
+        #             #print(svc.alpha)
                     
-                    cl_prediction = svc.predict(X)
-                    prediction_boolean = prediction_boolean*(cl_prediction == 1)
-                prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
-                #print(prediction_boolean)
+        #             cl_prediction = svc.predict(X)
+        #             prediction_boolean = prediction_boolean*(cl_prediction == 1)
+        #         prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
+        #         #print(prediction_boolean)
                 #print(prediction)
         
 
