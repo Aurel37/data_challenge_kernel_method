@@ -24,6 +24,7 @@ class MultiKernelSVC:
         if not self.one_to_one:
             # one vs all
             for cl in range(self.class_num):
+                print(f"\r cl = {cl}", end="")
                 svc = KernelSVC(self.C, self.kernel, self.epsilon)
                 target = self.dataloader.target_train.copy()
                 target[self.dataloader.target_train == cl] = 1
@@ -62,6 +63,8 @@ class MultiKernelSVC:
                 # "delete" the cl that will be studied
                 current_cl  += 1
                 class_available = np.arange(current_cl, self.class_num)
+        accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
+        print(f"accuracy training : {accuracy}")
 
     def accuracy(self, X, y):
         n, _ = X.shape
@@ -73,18 +76,27 @@ class MultiKernelSVC:
         prediction = -np.ones(n)
         # one vs one prediction
         # class one is not in there
-        for cl in range(self.class_num-1):
-            prediction_boolean = np.array([True for _ in range(n)])
-            # for a vector to be on a certain
-            # class, it must be detected at one
-            # for all svc's of the class i
-            # this doesn't work only ones predicted 
-            # this is ABSURD 
-            for svc in self.SVMs[cl]:
-                #print(svc.alpha)
-                cl_prediction = svc.predict(X)
-                prediction_boolean = prediction_boolean*(cl_prediction == 1)
-            prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
-            #print(prediction_boolean)
-            #print(prediction)
+        if not self.one_to_one:
+            for cl in range(self.class_num):
+                cl_prediction = self.SVMs[cl].predict(X)
+                prediction[cl_prediction == 1] = cl
+        else:
+            for cl in range(self.class_num-1):
+                prediction_boolean = np.array([True for _ in range(n)])
+                # for a vector to be on a certain
+                # class, it must be detected at one
+                # for all svc's of the class i
+                # this doesn't work only ones predicted 
+                # this is ABSURD 
+                support = np.zeros(())
+                for svc in self.SVMs[cl]:
+                    #print(svc.alpha)
+                    
+                    cl_prediction = svc.predict(X)
+                    prediction_boolean = prediction_boolean*(cl_prediction == 1)
+                prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
+                #print(prediction_boolean)
+                #print(prediction)
+        
+
         return prediction

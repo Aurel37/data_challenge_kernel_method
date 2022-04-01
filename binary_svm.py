@@ -19,10 +19,9 @@ class KernelSVC:
         for i in range(N):
             diag_y[i,i] = y[i]
         one = np.ones(N)
-
         # Lagrange dual problem
         alpha = cp.Variable(N)
-        prob= cp.Problem(cp.Minimize(-2*alpha.T@y+cp.quad_form(alpha, K)), [alpha.T@one == 0, diag_y@alpha - self.C*one <= 0, -diag_y@alpha  <= 0])
+        prob= cp.Problem(cp.Minimize(-2*alpha.T@y + cp.quad_form(alpha, K)), [alpha.T@one == 0, cp.multiply(y, alpha) - self.C*one <= 0, -cp.multiply(y, alpha)  <= 0])
         prob.solve()
         self.alpha = alpha.value
         # support indices

@@ -14,7 +14,7 @@ class RBF:
             norm_diff = np.zeros((N, N))
             for i in range(N):
                 if i%100 == 0:
-                    print(i/N)
+                    print(f"\r current = {i/N}", end="")
                 for j in range(i + 1, N):
                     norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
             norm_diff = norm_diff + norm_diff.T
@@ -40,6 +40,6 @@ class Linear:
             self.k = x_tens_y
             return x_tens_y
         else:
-            x_tens_y = X[:,:]@X[:, :].T
+            x_tens_y = X@X.T
             self.k = x_tens_y
             return x_tens_y
