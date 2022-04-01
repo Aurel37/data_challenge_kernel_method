@@ -14,6 +14,9 @@ Xtr = np.array(pd.read_csv('Xtr.csv',header=None,sep=',',usecols=range(3072)))
 Xte = np.array(pd.read_csv('Xte.csv',header=None,sep=',',usecols=range(3072)))
 Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 
+
+
+
 # load data, DataLoader automatically divide the dataset in train
 # and test with a proportion of 0.8 here
 Xtr_gray = transform_to_gray(Xtr)

@@ -34,7 +34,7 @@ class KernelPCA:
         # the first n_dim eigenvect
         order_eigh = eigenvals.argsort()[::-1]
         order_eigh = order_eigh[:self.n_dim]
-
+        
         alpha = eigenvects[order_eigh, :].T/np.sqrt(eigenvals[order_eigh])
         return np.dot(K, alpha)
 
