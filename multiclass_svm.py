@@ -1,3 +1,4 @@
+from locale import currency
 import numpy as np
 from binary_svm import KernelSVC
 import time
@@ -37,11 +38,14 @@ class MultiKernelSVC:
             # one vs one
             # current_cl = 1
             # class_available = np.arange(current_cl, self.class_num)
-            print("\n Begin Fit SVM oVo")
+            size = size = self.class_num*(self.class_num - 1)/2
+            current_index = 1
+            print("Begin Fit SVM oVo")
             for class_i  in range(self.class_num):
-                print(f" \r cl = {class_i}", end="")
+                
                 for class_j in range(class_i + 1, self.class_num):
-
+                    #print('#' * int((current_index)/size * 50))
+                    print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
                     posi = np.argwhere(self.dataloader.target_train == class_j)[:, 0]
                     nega = np.argwhere(self.dataloader.target_train == class_i)[:, 0]
                     target = self.dataloader.target_train.copy()
@@ -67,6 +71,7 @@ class MultiKernelSVC:
                     # accuracy = svc.accuracy(train_set, target_subarray)
                     # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     self.SVMs.append(svc)
+                    current_index += 1
                     # if cl not in self.SVMs.keys():
                     #     self.SVMs[cl] = [svc]
                     # else:
@@ -74,7 +79,7 @@ class MultiKernelSVC:
                 # "delete" the cl that will be studied
                 # current_cl  += 1
                 # class_available = np.arange(current_cl, self.class_num)
-        
+        print()
         # accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
         # print(f"accuracy training : {accuracy}")
 
@@ -86,7 +91,7 @@ class MultiKernelSVC:
     def predict(self, X):
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
-            print(" \n Begin predict from oVo to oVr")
+            print("Begin predict from oVo to oVr")
             n, _ = X.shape
             predictions_oVo = np.zeros((n, len(self.SVMs)))
             scores_oVo = np.zeros((n, len(self.SVMs)))
@@ -94,10 +99,11 @@ class MultiKernelSVC:
             predictions = np.zeros((n, self.class_num))
             scores = np.zeros((n, self.class_num))
 
+            size = self.class_num*(self.class_num - 1)/2
             current_index = 0
             for class_i  in range(self.class_num):
-                    print(f"\n \r cl = {class_i}", end="")
                     for class_j in range(class_i + 1, self.class_num):
+                        print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
                         svc = self.SVMs[current_index]
                         time0 = time.time()
                         predictions_oVo[:, current_index], scores_oVo[:, current_index] = svc.predict(X, return_score = True)
@@ -109,7 +115,7 @@ class MultiKernelSVC:
                         predictions[predictions_oVo[:, current_index] == 1, class_j] += 1
                         current_index += 1
 
-
+            print()
             # Here, we have for each samples the number of votes per class. 
             # We will use the scores to solve equality problems 
             # So, put scores in [-1/3; 1/3] so that is does not change the number 
@@ -124,6 +130,7 @@ class MultiKernelSVC:
             for cl in range(self.class_num):
                 cl_prediction = self.SVMs[cl].predict(X)
                 predictions[cl_prediction == 1] = cl
+            return predictions
         # else:
         #     for cl in range(self.class_num-1):
         #         prediction_boolean = np.array([True for _ in range(n)])
@@ -141,6 +148,3 @@ class MultiKernelSVC:
         #         prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
         #         #print(prediction_boolean)
                 #print(prediction)
-        
-
-        return predictions
