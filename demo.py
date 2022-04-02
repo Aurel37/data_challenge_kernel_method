@@ -1,7 +1,7 @@
 from platform import architecture
 from kernel_pca import KernelPCA
 from dataloader import DataLoader
-from kernel import Linear, RBF
+from kernel import Linear, RBF, Polynomial
 from multiclass_svm import MultiKernelSVC
 from utils import transform_to_gray
 from compute_features import Histogram_oriented_gradient
@@ -29,7 +29,7 @@ for i in range(5000):
     hhg = Histogram_oriented_gradient(Xtr_gray[i], block_size=(4,4), cell_size=(6, 6), flatten = True)
     hog_features[i, :] = hhg
 
-dataloader = DataLoader(hog_features, Ytr, kernel=RBF(1).kernel, prop=0.8, shuffle=True)
+dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 10).kernel, prop=0.8, shuffle=True)
 
 # perform pca
 #pca = KernelPCA(dataloader, RBF().kernel, 10)
@@ -40,7 +40,7 @@ time0 = time.time()
 multi_svc = MultiKernelSVC(0.5, dataloader, 10, one_to_one=True)
 multi_svc.fit()
 accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
-print(f"accuracy test = {accuracy}")
+print(f" \n accuracy test = {accuracy}")
 time1 = time.time()
 
 print(" Prediction computed in {}".format(time1 - time0))

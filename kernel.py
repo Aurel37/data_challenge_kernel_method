@@ -43,3 +43,21 @@ class Linear:
             x_tens_y = X@X.T
             self.k = x_tens_y
             return x_tens_y
+
+
+
+class Polynomial:
+    def __init__(self, d = 2, c = 0):
+        self.k = None
+        self.d = d
+        self.c = c
+    def kernel(self,X,Y=None):
+        # matrixes of inner products
+        if Y is not None:
+            x_tens_y = np.power((X.dot(Y.T) + self.c), self.d)
+            self.k = x_tens_y
+            return x_tens_y
+        else:
+            x_tens_y = np.power(X@X.T + self.c, self.d)
+            self.k = x_tens_y
+            return x_tens_y
