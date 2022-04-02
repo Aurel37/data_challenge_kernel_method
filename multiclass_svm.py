@@ -123,7 +123,7 @@ class MultiKernelSVC:
         else:
             for cl in range(self.class_num):
                 cl_prediction = self.SVMs[cl].predict(X)
-                prediction[cl_prediction == 1] = cl
+                predictions[cl_prediction == 1] = cl
         # else:
         #     for cl in range(self.class_num-1):
         #         prediction_boolean = np.array([True for _ in range(n)])
@@ -143,4 +143,4 @@ class MultiKernelSVC:
                 #print(prediction)
         
 
-        return prediction
+        return predictions
