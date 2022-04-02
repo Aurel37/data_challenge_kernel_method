@@ -17,6 +17,7 @@ class RBF:
                     print(f"\r current = {i/N}", end="")
                 for j in range(i + 1, N):
                     norm_diff[i, j] = np.linalg.norm(X[i, :] - X[j, :])
+            print()
             norm_diff = norm_diff + norm_diff.T
         else:
             N, d = X.shape
