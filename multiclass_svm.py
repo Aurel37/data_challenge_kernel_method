@@ -64,8 +64,8 @@ class MultiKernelSVC:
                     kernel_ij = self.K[index,:][:,index]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target_subarray, kernel_ij)
-                    accuracy = svc.accuracy(train_set, target_subarray)
-                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    # accuracy = svc.accuracy(train_set, target_subarray)
+                    # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     self.SVMs.append(svc)
                     # if cl not in self.SVMs.keys():
                     #     self.SVMs[cl] = [svc]
@@ -102,7 +102,7 @@ class MultiKernelSVC:
                         time0 = time.time()
                         predictions_oVo[:, current_index], scores_oVo[:, current_index] = svc.predict(X, return_score = True)
                         time1 = time.time()
-                        print('Temps de calcul de la prédiction {}'.format(time1 - time0))
+                        #print('Temps de calcul de la prédiction {}'.format(time1 - time0))
                         scores[:, class_i] -= scores_oVo[:, current_index]
                         scores[:, class_j] += scores_oVo[:, current_index]
                         predictions[predictions_oVo[:, current_index] == -1, class_i] += 1

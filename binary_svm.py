@@ -29,9 +29,7 @@ class KernelSVC:
         self.alpha = self.alpha[supportIndices]
         y_support = y[supportIndices]
         self.support = X[supportIndices] #'''------------------- A matrix with each row corresponding to a support vector ------------------'''
-        
         # compute b
-        
         # index of alpha_i to compute b using 
         # the complementary slackness conditions
         kkt_index = np.argmax((self.alpha > 0)*(self.alpha < y_support*self.C))
