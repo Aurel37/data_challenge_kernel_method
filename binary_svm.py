@@ -44,7 +44,16 @@ class KernelSVC:
         return  self.kernel(x, self.support)@self.alpha
     
     
-    def predict(self, X):
+    def predict(self, X, return_score = False):
         """ Predict y values in {-1, 1} """
         d = self.separating_function(X)
-        return 2 * (d+self.b > 0) - 1
+        if return_score:
+            return 2 * (d+self.b > 0) - 1, d
+        else:
+            return 2 * (d+self.b > 0) - 1
+
+
+    def accuracy(self, X, y):
+        n, _ = X.shape
+        prediction = self.predict(X)
+        return np.sum(prediction == y)/n

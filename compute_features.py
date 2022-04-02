@@ -76,8 +76,35 @@ def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution):
 
     return orientation_histo
 
+def normalization(block, method, eps = 1e-5):
+    """
+    Do the normalization of the block according to the chosen method
+    Espilon used for avoiding divison by 0
+    """
+    if method == 'L1':
+        block_normalized = block / (np.sum(np.abs(block)) + eps)
 
-def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), multichannel = False,):
+    elif method == 'L2':
+        block_normalized = block / np.sqrt((np.sum(np.power(block, 2)) + eps))
+    return block_normalized
+
+def normalizing_blocks(hog, block_size, method):
+    N, M, O = hog.shape
+    brows, bcols = block_size
+
+    # Compute the new shapes of the array : do slidding normalization
+    block_rows = N - brows + 1
+    block_cols = M - bcols + 1
+
+    hog_normalized = np.zeros((block_rows, block_cols, brows, bcols, O ))
+
+    for r in range(block_rows):
+        for c in range(block_cols):
+            block = hog[r: r + brows, c: c + bcols, :]
+            hog_normalized[r, c, :] =  normalization(block, method)
+    return hog_normalized
+
+def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), block_size= (4, 4), multichannel = False, method = 'L1', flatten = False):
 
     if multichannel:
         gradient_dx, gradient_dy = compute_gradient_multi_channel(image)
@@ -87,5 +114,7 @@ def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), multi
 
 
     hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution)
-    
-    return hog
+    hog_normalize = normalizing_blocks(hog, block_size, method)
+    if flatten:
+        return hog_normalize.flatten()
+    return hog_normalize
