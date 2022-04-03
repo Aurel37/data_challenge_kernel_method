@@ -58,7 +58,7 @@ class MultiKernelSVC:
                     acc = ""
                     if accuracy_print:
                         accuracy = svc.accuracy(train_set, binary_target)
-                        acc = f" SVM ({class_i}, {class_j}) accuracy training : {accuracy:.3f}"
+                        acc = f" SVM accuracy training : {accuracy:.3f}"
                     self.SVMs.append(svc)
 
                     print('\rProgress [{0:<50s}] current class : {1}/{2}. {3}'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1, acc), end="")
