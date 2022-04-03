@@ -22,16 +22,14 @@ Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 if __name__ == "__main__":
     # load data, DataLoader automatically divide the dataset in train
     # and test with a proportion of 0.8 here
-    #Xtr_gray = transform_to_gray(Xtr)
+
 
     Xtr_gray = np.resize(Xtr, (5000, 32, 32))
     Xtr_im = transform_to_image(Xtr)
-    #hog_xtr = hog(Xtr_gray, cells_per_block=(1,1), pixels_per_cell=(32, 32), feature_vector=True)
 
-    hog_features = np.zeros((5000, 324))
+    hog_features = np.zeros((5000, 1764))
     for i in range(5000):
-        #hog_features[i, 🙂 = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'None', multichannel= True)
-        hog_features[i, :] = hog(Xtr_im[i], orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2),  block_norm = 'L1', visualize=False, feature_vector=True, channel_axis=-1)
+        hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
 
     dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 2).kernel, prop=0.8, shuffle=False)
 
