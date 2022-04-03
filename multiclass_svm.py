@@ -45,7 +45,6 @@ class MultiKernelSVC:
                 
                 for class_j in range(class_i + 1, self.class_num):
                     #print('#' * int((current_index)/size * 50))
-                    print('\rProgress [{0:<50s}] current classes : ({1}, {2})'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1), end="")
                     keep_idx = (self.dataloader.target_train == class_j) | (self.dataloader.target_train == class_i)
                     target = self.dataloader.target_train[keep_idx]
                     binary_target = np.ones(target.shape)
@@ -61,7 +60,7 @@ class MultiKernelSVC:
                         acc = f" SVM accuracy training : {accuracy:.3f}"
                     self.SVMs.append(svc)
 
-                    print('\rProgress [{0:<50s}] current class : {1}/{2}. {3}'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1, acc), end="")
+                    print('\rProgress [{0:<50s}] current class : {1}/{2}. {3} {4}'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1, acc, " "*3), end="")
                     current_index += 1
         print()
     

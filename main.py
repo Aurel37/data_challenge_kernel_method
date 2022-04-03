@@ -6,6 +6,7 @@ from multiclass_svm import MultiKernelSVC
 from utils import transform_to_gray, to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
 from skimage.feature import hog
+#from em import EM
 
 
 
@@ -29,7 +30,7 @@ if __name__ == "__main__":
     for i in range(5000):
         hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
 
-    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 2).kernel, prop=0.8, shuffle=False)
+    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 0.6).kernel, prop=0.8, shuffle=False)
 
     # perform pca
     #pca = KernelPCA(dataloader, RBF().kernel, 10)
@@ -44,20 +45,17 @@ if __name__ == "__main__":
     time1 = time.time()
     print(" Prediction computed in {}".format(time1 - time0))
 
-    Xtr_im = transform_to_image(Xtr)
+    Xte_im = transform_to_image(Xte)
 
-    hog_features = np.zeros((5000, 1764))
-    for i in range(5000):
-        hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
+    hog_features = np.zeros((2000, 1764))
+    for i in range(2000):
+        hog_features[i, :] = Histogram_oriented_gradient(Xte_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
 
     #Xte_gray = transform_to_gray(Xte)
     #Xte_gray = np.resize(Xte_gray, (2000, 32, 32))
     #hog_xtr = hog(Xtr_gray, cells_per_block=(1,1), pixels_per_cell=(32, 32), feature_vector=True)
 
-    #hog_features = np.zeros((2000, 324))
-    #for i in range(2000):
-    #    hhg = Histogram_oriented_gradient(Xte_gray[i], block_size=(2,2), cell_size=(8, 8), flatten = True)
-    #    hog_features[i, :] = hhg
-    #predictions = multi_svc.predict(hog_features)
-    #print(predictions)
-    #to_csv(predictions)
+
+    predictions = multi_svc.predict(hog_features)
+    print(predictions)
+    to_csv(predictions)
