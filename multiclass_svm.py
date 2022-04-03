@@ -21,7 +21,7 @@ class MultiKernelSVC:
         self.class_num = class_num
         self.one_to_one = one_to_one
 
-    def fit(self):
+    def fit(self, accuracy_print=False):
         """train the multiclass svms using one vs all
         """
         if not self.one_to_one:
@@ -45,13 +45,14 @@ class MultiKernelSVC:
                 
                 for class_j in range(class_i + 1, self.class_num):
                     #print('#' * int((current_index)/size * 50))
-                    print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
+                    
                     posi = np.argwhere(self.dataloader.target_train == class_j)[:, 0]
                     nega = np.argwhere(self.dataloader.target_train == class_i)[:, 0]
                     target = self.dataloader.target_train.copy()
                     target[posi] = 1
                     target[nega] = -1
                     index = np.concatenate((posi, nega))
+
                     train_set = self.dataloader.dataset_train[index, :]
 
                     target_subarray = target[index]
@@ -60,16 +61,18 @@ class MultiKernelSVC:
                     time0 = time.time()
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target_subarray, kernel_ij)
-                    accuracy = svc.accuracy(train_set, target_subarray)
-                    #print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     time1 = time.time()
+                    tps = ""
                     if class_i == 0 and class_j == 1:
-                            print('Temps de fit{}'.format(time1 - time0))
-                        
-                    
-                    # accuracy = svc.accuracy(train_set, target_subarray)
-                    # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                        tps = "Temps de fit : {:.2f} s.".format(time1 - time0)
+
+                    acc = ""   
+                    if accuracy_print:
+                        accuracy = svc.accuracy(train_set, target_subarray)
+                        acc = f"SVM ({class_i}, {class_j}) accuracy training : {accuracy:.3f}."
                     self.SVMs.append(svc)
+
+                    print('\rProgress [{0:<50s}] current class : {1}. {2}'.format('#' * int((current_index)/size * 50), class_i+1, acc), end="")
                     current_index += 1
         print()
         # accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
@@ -83,7 +86,7 @@ class MultiKernelSVC:
     def predict(self, X):
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
-            #print(" \n Begin predict from oVo to oVr")
+            print("Begin predict from oVo to oVo")
             n, _ = X.shape
             predictions_oVo = np.zeros((n, len(self.SVMs)))
             scores_oVo = np.zeros((n, len(self.SVMs)))
@@ -123,20 +126,3 @@ class MultiKernelSVC:
                 cl_prediction = self.SVMs[cl].predict(X)
                 predictions[cl_prediction == 1] = cl
             return predictions
-        # else:
-        #     for cl in range(self.class_num-1):
-        #         prediction_boolean = np.array([True for _ in range(n)])
-        #         # for a vector to be on a certain
-        #         # class, it must be detected at one
-        #         # for all svc's of the class i
-        #         # this doesn't work only ones predicted 
-        #         # this is ABSURD 
-        #         support = np.zeros(())
-        #         for svc in self.SVMs[cl]:
-        #             #print(svc.alpha)
-                    
-        #             cl_prediction = svc.predict(X)
-        #             prediction_boolean = prediction_boolean*(cl_prediction == 1)
-        #         prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
-        #         #print(prediction_boolean)
-                #print(prediction)

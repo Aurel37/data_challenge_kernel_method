@@ -30,9 +30,10 @@ if __name__ == "__main__":
 
     hog_features = np.zeros((5000, 324))
     for i in range(5000):
+        #hog_features[i, 🙂 = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'None', multichannel= True)
         hog_features[i, :] = hog(Xtr_im[i], orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2),  block_norm = 'L1', visualize=False, feature_vector=True, channel_axis=-1)
 
-    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 1).kernel, prop=0.8, shuffle=True)
+    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 2).kernel, prop=0.8, shuffle=False)
 
     # perform pca
     #pca = KernelPCA(dataloader, RBF().kernel, 10)
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     # multi svc
     time0 = time.time()
     multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
-    multi_svc.fit()
+    multi_svc.fit(True)
     accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
     print(f"accuracy test = {accuracy}")
     time1 = time.time()
