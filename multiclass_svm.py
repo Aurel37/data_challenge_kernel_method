@@ -55,30 +55,14 @@ class MultiKernelSVC:
                     train_set = self.dataloader.dataset_train[index, :]
 
                     target_subarray = target[index]
-                    # n_1 = len(posi[0])
-                    # n_2 = len(nega[0])
-                    # target = np.zeros(n_1 + n_2)
-                    # target[:n_1] = 1
-                    # target[n_1:] = -1
-                    # arange = np.arange(n_1+n_2)
-                    # #np.random.shuffle(arange)
-                    # target = target[arange]
-                    # train_set = train_set[arange, :]
                     # retrieve the sub matrix
                     kernel_ij = self.K[index,:][:,index]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target_subarray, kernel_ij)
-                    # accuracy = svc.accuracy(train_set, target_subarray)
-                    # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    accuracy = svc.accuracy(train_set, target_subarray)
+                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     self.SVMs.append(svc)
                     current_index += 1
-                    # if cl not in self.SVMs.keys():
-                    #     self.SVMs[cl] = [svc]
-                    # else:
-                    #     self.SVMs[cl].append(svc)
-                # "delete" the cl that will be studied
-                # current_cl  += 1
-                # class_available = np.arange(current_cl, self.class_num)
         print()
         # accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
         # print(f"accuracy training : {accuracy}")

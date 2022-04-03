@@ -5,6 +5,9 @@ from kernel import Linear, RBF, Polynomial
 from multiclass_svm import MultiKernelSVC
 from utils import transform_to_gray, to_csv
 from compute_features import Histogram_oriented_gradient
+from skimage.feature import hog
+
+
 
 import numpy as np
 import pandas as pd
@@ -26,10 +29,9 @@ if __name__ == "__main__":
 
     hog_features = np.zeros((5000, 324))
     for i in range(5000):
-        hhg = Histogram_oriented_gradient(Xtr_gray[i], block_size=(2,2), cell_size=(8, 8), flatten = True)
-        hog_features[i, :] = hhg
+        hog_features[i, :] = hog(Xtr_gray[i], orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2),  block_norm = 'L1', visualize=False, feature_vector=True)
 
-    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(6, 1).kernel, prop=0.8, shuffle=True)
+    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 1).kernel, prop=0.8, shuffle=True)
 
     # perform pca
     #pca = KernelPCA(dataloader, RBF().kernel, 10)
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     #dataloader_pca = pca.project()
     # multi svc
     time0 = time.time()
-    multi_svc = MultiKernelSVC(0.5, dataloader, 10, one_to_one=True)
+    multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
     multi_svc.fit()
     accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
     print(f"accuracy test = {accuracy}")

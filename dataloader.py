@@ -6,7 +6,7 @@ class DataLoader:
         if not(target.shape[0] == dataset.shape[0]):
             raise ValueError("target and dataset must have same x-axis size")
         self.N = dataset.shape[0]
-        self.shuffle = shuffle
+        self.shuffle = self.shuffle
         self.prop = prop
         self.dataset = dataset
         self.target = target
@@ -60,9 +60,9 @@ class DataLoader:
         self.target_train = self._target[:int(self.N*self.prop)]
         self.target_test  = self._target[int(self.N*self.prop):]
 
-    def copy(self):
+    def copy_data(self):
         """copy the dataloader properly
         """
         dataset = self.dataset.copy()
         target = self.target.copy()
-        return DataLoader(dataset, target, self.prop, self.shuffle)
+        return DataLoader(dataset, target, self.prop, shuffle=False)
