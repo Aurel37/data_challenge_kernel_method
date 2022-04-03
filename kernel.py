@@ -1,3 +1,6 @@
+"""All  kernel used in the competition are encoded here
+Gaussian kernel/Polynomial Kernel
+"""
 import numpy as np
 
 class RBF:
@@ -29,22 +32,6 @@ class RBF:
                 for j in range(M):
                     norm_diff[i, j] = np.linalg.norm(X[i, :] - Y[j, :])
         return np.exp(-1/2*np.square(norm_diff/self.sigma))
-
-class Linear:
-    def __init__(self):
-        self.k = None
-    
-    def kernel(self,X,Y=None):
-        # matrixes of inner products
-        if Y is not None:
-            x_tens_y = X[:,:]@Y[:, :].T
-            self.k = x_tens_y
-            return x_tens_y
-        else:
-            x_tens_y = X@X.T
-            self.k = x_tens_y
-            return x_tens_y
-
 
 
 class Polynomial:
