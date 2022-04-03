@@ -61,7 +61,7 @@ class MultiKernelSVC:
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target_subarray, kernel_ij)
                     accuracy = svc.accuracy(train_set, target_subarray)
-                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    #print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     time1 = time.time()
                     if class_i == 0 and class_j == 1:
                             print('Temps de fit{}'.format(time1 - time0))

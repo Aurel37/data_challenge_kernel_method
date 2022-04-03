@@ -6,7 +6,7 @@ class DataLoader:
         if not(target.shape[0] == dataset.shape[0]):
             raise ValueError("target and dataset must have same x-axis size")
         self.N = dataset.shape[0]
-        self.shuffle = self.shuffle
+        self.shuffle = shuffle
         self.prop = prop
         self.dataset = dataset
         self.target = target
