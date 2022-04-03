@@ -29,11 +29,11 @@ def compute_gradient_multi_channel(image):
     gradient_dx = np.zeros((W, H, C))
     gradient_dy = np.zeros((W, H, C))
     for c in range(C):
-        gradient_dx[:, :, c], gradient_dy[:, :, c]  = commpute_gradient(image[:, :, c])
+        gradient_dx[:, :, c], gradient_dy[:, :, c]  = compute_gradient(image[:, :, c])
 
     return gradient_dx, gradient_dy
 
-def get_oriantation(gradient_dx, gradient_dy):
+def get_orientation(gradient_dx, gradient_dy):
     """Get the orientation between arrays"""
     angles_rad = np.arctan2(gradient_dx, gradient_dy)
     angles_deg = angles_rad * 180/ np.pi
@@ -52,18 +52,31 @@ def histogram_gradient_cell(orientation, magnitude, theta_beg, theta_end):
     sum_magnetude = np.sum(magnitude[pixel_concerned])
     return sum_magnetude/(rows * cols)
 
-def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution):
+def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multichannel = False):
 
-    W, H = gradient_dx.shape
+    if multichannel:
+        W, H, C = gradient_dx.shape
+    else:
+        W, H = gradient_dx.shape
     dw, dh = cell_size
     N = int(W // dw)
     M = int(H // dh)
 
     orientation_histo = np.zeros((N, M, resolution))
     dtheta = 180/resolution
-
-    orientations = get_oriantation(gradient_dx, gradient_dy)
-    magnitudes = get_magnitude(gradient_dx, gradient_dy)
+    if multichannel :
+        magnitudes = np.zeros(gradient_dx.shape)
+        orientations = np.zeros(gradient_dx.shape)
+        for c in range(C):
+            magnitudes[:, :, c] = get_magnitude(gradient_dx[:, :, c], gradient_dy[:, :, c])
+            orientations[:, :, c] = get_orientation(gradient_dx[:, :, c], gradient_dy[:, :, c])
+        keep_c = np.argmax(magnitudes, axis = -1)
+        keep_c = np.unravel_index(keep_c, magnitudes.shape)
+        magnitudes = magnitudes[keep_c]
+        orientations = orientations[keep_c]
+    else:
+        orientations = get_orientation(gradient_dx, gradient_dy)
+        magnitudes = get_magnitude(gradient_dx, gradient_dy)
 
     for t in range(resolution):
         theta_beg = dtheta*t
@@ -112,8 +125,7 @@ def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), block
     else:
         gradient_dx, gradient_dy = compute_gradient(image)
 
-
-    hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution)
+    hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution , multichannel= multichannel)
     hog_normalize = normalizing_blocks(hog, block_size, method)
     if flatten:
         return hog_normalize.flatten()

@@ -57,10 +57,18 @@ class MultiKernelSVC:
                     target_subarray = target[index]
                     # retrieve the sub matrix
                     kernel_ij = self.K[index,:][:,index]
+                    time0 = time.time()
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, target_subarray, kernel_ij)
                     accuracy = svc.accuracy(train_set, target_subarray)
                     print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    time1 = time.time()
+                    if class_i == 0 and class_j == 1:
+                            print('Temps de fit{}'.format(time1 - time0))
+                        
+                    
+                    # accuracy = svc.accuracy(train_set, target_subarray)
+                    # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     self.SVMs.append(svc)
                     current_index += 1
         print()
@@ -75,7 +83,7 @@ class MultiKernelSVC:
     def predict(self, X):
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
-            print("Begin predict from oVo to oVr")
+            #print(" \n Begin predict from oVo to oVr")
             n, _ = X.shape
             predictions_oVo = np.zeros((n, len(self.SVMs)))
             scores_oVo = np.zeros((n, len(self.SVMs)))
