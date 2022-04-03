@@ -39,8 +39,8 @@ if __name__ == "__main__":
     #dataloader_pca = pca.project()
     # multi svc
     time0 = time.time()
-    multi_svc = MultiKernelSVC(0.1, dataloader, 10, one_to_one=True)
-    multi_svc.fit()
+    multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
+    multi_svc.fit(True)
     accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
     print(f"accuracy test = {accuracy}")
     time1 = time.time()

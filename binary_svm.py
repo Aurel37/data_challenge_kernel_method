@@ -52,7 +52,7 @@ class KernelSVC:
             alpha = solvers.qp(P,q,G,h,A,b)
             #print( npalpha['x'] )
             self.alpha = np.ravel(alpha['x']) 
-        
+            
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]
