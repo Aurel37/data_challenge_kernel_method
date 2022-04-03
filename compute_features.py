@@ -8,14 +8,13 @@ from matplotlib import pyplot as plt
 def compute_gradient(image):
     """ 
     Compute the arrays of gradient in dx and dy
+    We have dx(t) = x(t + 1) - x(t - 1)
     Suppose image is a W x H array 
     """
-
     gradient_dx = np.zeros(image.shape)
     gradient_dy = np.zeros(image.shape)
-    gradient_dx[:-1, :] = image[1:, :] - image[:-1, :]
-    gradient_dy[:, :-1] = image[:, 1:] - image[:, :-1]
-
+    gradient_dx[1:-1, :] = image[2:, :] - image[:-2, :]
+    gradient_dy[:, 1:-1] = image[:, 2:] - image[:, :-2]
     return gradient_dx, gradient_dy
 
 
@@ -35,10 +34,10 @@ def compute_gradient_multi_channel(image):
 
 def get_orientation(gradient_dx, gradient_dy):
     """Get the orientation between arrays"""
+
     angles_rad = np.arctan2(gradient_dx, gradient_dy)
     angles_deg = angles_rad * 180/ np.pi
-    angles_deg %= 180
-
+    angles_deg = angles_deg % 180
     return angles_deg
 
 def get_magnitude(gradient_dx, gradient_dy):
@@ -47,10 +46,13 @@ def get_magnitude(gradient_dx, gradient_dy):
 
 def histogram_gradient_cell(orientation, magnitude, theta_beg, theta_end):
     """ Get mean magnetude of the pixel in the range """
-    rows, cols = orientation.shape
+    W, H = orientation.shape
+
     pixel_concerned = (orientation >= theta_beg) & (orientation < theta_end)
-    sum_magnetude = np.sum(magnitude[pixel_concerned])
-    return sum_magnetude/(rows * cols)
+    magnitude_concerned = magnitude * pixel_concerned
+    sum_magnetude = np.sum(magnitude_concerned)
+
+    return sum_magnetude/(W * H)
 
 def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multichannel = False):
 
@@ -64,16 +66,21 @@ def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multicha
 
     orientation_histo = np.zeros((N, M, resolution))
     dtheta = 180/resolution
+    
     if multichannel :
-        magnitudes = np.zeros(gradient_dx.shape)
-        orientations = np.zeros(gradient_dx.shape)
+        magnitudes_all = np.zeros(gradient_dx.shape)
+        orientations_all = np.zeros(gradient_dx.shape)
         for c in range(C):
-            magnitudes[:, :, c] = get_magnitude(gradient_dx[:, :, c], gradient_dy[:, :, c])
-            orientations[:, :, c] = get_orientation(gradient_dx[:, :, c], gradient_dy[:, :, c])
-        keep_c = np.argmax(magnitudes, axis = -1)
-        keep_c = np.unravel_index(keep_c, magnitudes.shape)
-        magnitudes = magnitudes[keep_c]
-        orientations = orientations[keep_c]
+            magnitudes_all[:, :, c] = get_magnitude(gradient_dx[:, :, c], gradient_dy[:, :, c])
+            orientations_all[:, :, c] = get_orientation(gradient_dx[:, :, c], gradient_dy[:, :, c])
+        
+        keep_c = np.argmax(magnitudes_all, axis = -1)
+        rows, cols = np.meshgrid(np.arange(W),
+                             np.arange(H),
+                             indexing='ij',
+                             sparse=True)
+        magnitudes = magnitudes_all[rows, cols, keep_c]
+        orientations = orientations_all[rows, cols, keep_c]
     else:
         orientations = get_orientation(gradient_dx, gradient_dy)
         magnitudes = get_magnitude(gradient_dx, gradient_dy)
@@ -99,6 +106,9 @@ def normalization(block, method, eps = 1e-5):
 
     elif method == 'L2':
         block_normalized = block / np.sqrt((np.sum(np.power(block, 2)) + eps))
+    
+    else:
+        block_normalized = block
     return block_normalized
 
 def normalizing_blocks(hog, block_size, method):
@@ -117,16 +127,47 @@ def normalizing_blocks(hog, block_size, method):
             hog_normalized[r, c, :] =  normalization(block, method)
     return hog_normalized
 
-def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), block_size= (4, 4), multichannel = False, method = 'L1', flatten = False):
-
+def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), block_size= (4, 4), multichannel = False, method = 'L1', flatten = True, visualize = True):
+    image = image.astype(float)
     if multichannel:
         gradient_dx, gradient_dy = compute_gradient_multi_channel(image)
 
     else:
         gradient_dx, gradient_dy = compute_gradient(image)
-
-    hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution , multichannel= multichannel)
+    
+    hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multichannel)
     hog_normalize = normalizing_blocks(hog, block_size, method)
     if flatten:
         return hog_normalize.flatten()
     return hog_normalize
+
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    from skimage.feature import hog
+    from skimage import data, exposure
+
+
+    image = data.astronaut()
+    vis = True
+    fd, hog_image = Histogram_oriented_gradient(image, resolution = 9, cell_size = (8, 8), block_size= (4, 4), multichannel = True, flatten = False, visualize = vis)
+    #fd, hog_image = hog(image, orientations=9, pixels_per_cell=(8, 8),  cells_per_block=(1, 1), visualize=True, channel_axis=-1)
+
+    if vis :
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
+
+        ax1.axis('off')
+        ax1.imshow(image)
+        ax1.set_title('Input image')
+
+        # Rescale histogram for better display
+        hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 10))
+        ax2.axis('off')
+        ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
+        ax2.set_title('Input image')
+
+        plt.show()
+
+        

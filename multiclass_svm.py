@@ -45,35 +45,20 @@ class MultiKernelSVC:
                 
                 for class_j in range(class_i + 1, self.class_num):
                     #print('#' * int((current_index)/size * 50))
-                    print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
-                    posi = np.argwhere(self.dataloader.target_train == class_j)[:, 0]
-                    nega = np.argwhere(self.dataloader.target_train == class_i)[:, 0]
-                    target = self.dataloader.target_train.copy()
-                    target[posi] = 1
-                    target[nega] = -1
-                    index = np.concatenate((posi, nega))
-                    train_set = self.dataloader.dataset_train[index, :]
+                    print('\rProgress [{0:<50s}] current classes : ({1}, {2})'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1), end="")
+                    keep_idx = (self.dataloader.target_train == class_j) | (self.dataloader.target_train == class_i)
+                    target = self.dataloader.target_train[keep_idx]
+                    binary_target = np.ones(target.shape)
+                    train_set = self.dataloader.dataset_train[keep_idx, :]
 
-                    target_subarray = target[index]
-                    # retrieve the sub matrix
-                    kernel_ij = self.K[index,:][:,index]
-                    time0 = time.time()
+                    binary_target[target == class_i] = -1
+                    kernel_ij = self.K[keep_idx,:][:,keep_idx]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
-                    svc.fit(train_set, target_subarray, kernel_ij)
-                    accuracy = svc.accuracy(train_set, target_subarray)
-                    #print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
-                    time1 = time.time()
-                    if class_i == 0 and class_j == 1:
-                            print('Temps de fit{}'.format(time1 - time0))
-                        
-                    
-                    # accuracy = svc.accuracy(train_set, target_subarray)
-                    # print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    svc.fit(train_set, binary_target, kernel_ij)
+                    accuracy = svc.accuracy(train_set, binary_target)
+                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
                     self.SVMs.append(svc)
                     current_index += 1
-        print()
-        # accuracy = self.accuracy(self.dataloader.dataset_train, self.dataloader.target_train)
-        # print(f"accuracy training : {accuracy}")
 
     def accuracy(self, X, y):
         n, _ = X.shape
@@ -123,20 +108,3 @@ class MultiKernelSVC:
                 cl_prediction = self.SVMs[cl].predict(X)
                 predictions[cl_prediction == 1] = cl
             return predictions
-        # else:
-        #     for cl in range(self.class_num-1):
-        #         prediction_boolean = np.array([True for _ in range(n)])
-        #         # for a vector to be on a certain
-        #         # class, it must be detected at one
-        #         # for all svc's of the class i
-        #         # this doesn't work only ones predicted 
-        #         # this is ABSURD 
-        #         support = np.zeros(())
-        #         for svc in self.SVMs[cl]:
-        #             #print(svc.alpha)
-                    
-        #             cl_prediction = svc.predict(X)
-        #             prediction_boolean = prediction_boolean*(cl_prediction == 1)
-        #         prediction[(prediction_boolean == 1)*(prediction == -1)] = cl
-        #         #print(prediction_boolean)
-                #print(prediction)
