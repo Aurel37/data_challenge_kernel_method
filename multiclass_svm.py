@@ -55,13 +55,16 @@ class MultiKernelSVC:
                     kernel_ij = self.K[keep_idx,:][:,keep_idx]
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, binary_target, kernel_ij)
-                    accuracy = svc.accuracy(train_set, binary_target)
-                    print(f" SVM ({class_i}, {class_j}) accuracy training : {accuracy}")
+                    acc = ""
+                    if accuracy_print:
+                        accuracy = svc.accuracy(train_set, binary_target)
+                        acc = f" SVM ({class_i}, {class_j}) accuracy training : {accuracy:.3f}"
                     self.SVMs.append(svc)
 
                     print('\rProgress [{0:<50s}] current class : {1}. {2}'.format('#' * int((current_index)/size * 50), class_i+1, acc), end="")
                     current_index += 1
-
+        print()
+    
     def accuracy(self, X, y):
         n, _ = X.shape
         prediction = self.predict(X)
