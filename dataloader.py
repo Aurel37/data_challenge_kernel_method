@@ -2,7 +2,7 @@ import numpy as np
 
 class DataLoader:
 
-    def __init__(self, dataset, target, validate_set, kernel=None, K=None, prop=0.8):
+    def __init__(self, dataset, target, validate_set=None, kernel=None, K=None, prop=0.8):
         if not(target.shape[0] == dataset.shape[0]):
             raise ValueError("target and dataset must have same x-axis size")
         self.N = dataset.shape[0]
@@ -61,5 +61,8 @@ class DataLoader:
         """
         dataset = self.dataset.copy()
         target = self.target.copy()
-        validate_set = self.validate_set.copy()
+        if self.validate_set is not None:
+            validate_set = self.validate_set.copy()
+        else:
+            validate_set = None
         return DataLoader(dataset, target, validate_set, kernel=self.kernel, K=self.K, prop=self.prop)

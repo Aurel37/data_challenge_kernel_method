@@ -11,6 +11,8 @@ class KernelPCA:
         self.kernel = kernel
         self.n_dim = n_dim
         self.display = display
+        self.eigenvectors = None
+        self.eigenvalues = None
     
     def center_kernel(self, X):
         """center kernel (mean) before pca
@@ -39,6 +41,9 @@ class KernelPCA:
         if self.display:
             plt.bar(np.arange(len(order_eigh)), np.abs(eigenvals[order_eigh]))
             plt.show()
+        # store for the kernelmeans
+        self.eigenvectors = eigenvects[order_eigh, :]
+        self.eigenvalues = eigenvals[order_eigh]
         order_eigh = order_eigh[:self.n_dim]
         alpha = eigenvects[order_eigh, :].T/np.sqrt(eigenvals[order_eigh])
         return np.dot(K, alpha)
@@ -47,8 +52,10 @@ class KernelPCA:
         """return the result of the pca projection
         """
         N, _ = self.dataloader.dataset.shape
-        dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.validate_set], axis=0)
-        print(dataset_plain.shape)
+        if self.dataloader.validate_set is not None:
+            dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.validate_set], axis=0)
+        else:
+            dataset_plain = self.dataloader.dataset
         dataset_reduced = self.PCA(dataset_plain)
         self.dataloader.dataset = dataset_reduced[:N,:]
         self.dataloader.validate_set =  dataset_reduced[N:,:]
