@@ -29,12 +29,7 @@ if __name__ == "__main__":
     for i in range(5000):
         hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
     
-    hog_features_e = np.zeros((2000, 1764))
-    for i in range(2000):
-       hhg = Histogram_oriented_gradient(Xte_im[i, :], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
-       hog_features_e[i, :] = hhg
-
-    Xte_im = transform_to_image(Xte)
+    
 
     hog_features_validation = np.zeros((2000, 1764))
     for i in range(2000):
@@ -49,16 +44,20 @@ if __name__ == "__main__":
         # project and retrieve the new dataloader with selected feature
         dataloader_pca = pca.project()
         dataloader = dataloader_pca
-    
-    # multi svc
-    time0 = time.time()
-    multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
-    multi_svc.fit()
-    accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
-    print(f"accuracy test = {accuracy}")
-    time1 = time.time()
-    print(" Prediction computed in {:.3f} s".format(time1 - time0))
+    if False:
 
-    predictions = multi_svc.predict(dataloader.validate_set)
-    print(predictions)
-    to_csv(predictions)
+    # multi svc
+        time0 = time.time()
+        multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
+        multi_svc.fit()
+        accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
+        print(f"accuracy test = {accuracy}")
+        time1 = time.time()
+        print(" Prediction computed in {:.3f} s".format(time1 - time0))
+
+        predictions = multi_svc.predict(dataloader.validate_set)
+        print(predictions)
+        to_csv(predictions)
+
+    if True:
+        pred = Cross_validation(hog_features, Ytr, hog_features_validation, Polynomial(5, 0.6).kernel, C= 0.1, K = 7, print_accuracy = True, parameters = (5, 0.6), return_prediction = True)

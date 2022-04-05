@@ -138,7 +138,7 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
         # Shift the index for changing the validation and training set
         idx_k = (idx + k*shift)%N
         # Compute the dataloader 
-        dataloader = DataLoader(Xtr[idx_k], Ytr[idx_k], kernel=kernel, prop=1 - proba, shuffle=False)
+        dataloader = DataLoader(Xtr[idx_k], Ytr[idx_k], kernel=kernel, prop=1 - proba)
         # Do the SVM
         multi_svc = MultiKernelSVC(C, dataloader, 10, one_to_one=True, verbose = 0)
         multi_svc.fit()
@@ -154,12 +154,19 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
     if return_prediction : 
         # Compute the prediction by computing prediction of each SVM, and take the main vote
         predictions = np.zeros((Xte.shape[0], K))
+        scores = np.zeros((Xte.shape[0], K))
         for k in range(K):
-            predictions[:, k] = SVMS[k].predict(Xte)
+            predictions[:, k], scores[:, k] = SVMS[k].predict(Xte)
+            
         predictions_f = np.zeros(Xte.shape[0])
+        scores /= (3*(np.abs(scores) + 1))
+        predictions_f += scores
         for im in range(Xte.shape[0]):
             vote = np.zeros(10)
             for k in range(K):
                 vote[int(predictions[im, k])] += 1
+            max_index = np.argwhere(vote == np.amax(max))
+            if len(max_index) > 1:
+                print("ahiiii")
             predictions_f[im] = np.argmax(vote)
         return predictions_f
