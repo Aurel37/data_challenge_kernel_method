@@ -167,14 +167,11 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
         
         predictions_f = np.zeros(Xte.shape[0])
         scores /= (3*(np.abs(scores) + 1))
-        print(scores.shape)
         predictions += scores
         for im in range(Xte.shape[0]):
             vote = np.zeros(10)
             for k in range(K):
                 vote[int(predictions[im, k])] += 1
             max_index = np.argwhere(vote == np.amax(max))
-            if len(max_index) > 1:
-                print("ahiiii")
             predictions_f[im] = np.argmax(vote)
         return predictions_f
