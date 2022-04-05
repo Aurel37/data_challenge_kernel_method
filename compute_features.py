@@ -169,5 +169,3 @@ if __name__ == "__main__":
         ax2.set_title('Input image')
 
         plt.show()
-
-        

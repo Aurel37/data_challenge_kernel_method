@@ -1,4 +1,7 @@
-from platform import architecture
+import argparse
+import numpy as np
+import pandas as pd
+import time
 from kernel_pca import KernelPCA
 from dataloader import DataLoader
 from kernel import RBF, Polynomial
@@ -8,19 +11,17 @@ from compute_features import Histogram_oriented_gradient
 
 
 
-import numpy as np
-import pandas as pd
-import time
 
 Xtr = np.array(pd.read_csv('Xtr.csv',header=None,sep=',',usecols=range(3072)))
 Xte = np.array(pd.read_csv('Xte.csv',header=None,sep=',',usecols=range(3072)))
 Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
 
-
-
 if __name__ == "__main__":
     # load data, DataLoader automatically divide the dataset in train
     # and test with a proportion of 0.8 here
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--pca", help="perform pca on the whole data (always after hog)", action="store_true")
+    args = parser.parse_args()
 
     Xtr_im = transform_to_image(Xtr)
     Xte_im = transform_to_image(Xte)
@@ -33,44 +34,31 @@ if __name__ == "__main__":
        hhg = Histogram_oriented_gradient(Xte_im[i, :], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
        hog_features_e[i, :] = hhg
 
-    clist = {
-        2: [0.2 + i * 0.2 /14 for i in range(15)],
-        3: [i * 0.3/14 for i in range(15)],
-        4: [i * 0.3/14 for i in range(15)],
-        5: [0.1 + i * 0.2/14 for i in range(15)] + [0.5 + i * 0.2/14 for i in range(15)],
-    }
+    Xte_im = transform_to_image(Xte)
 
-    # for d in [2, 3, 4, 5]:
-    #     for c in clist[d]:
-    #         dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(d, c).kernel, prop=0.8, shuffle=False)
+    hog_features_validation = np.zeros((2000, 1764))
+    for i in range(2000):
+        hog_features_validation[i, :] = Histogram_oriented_gradient(Xte_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
 
-    #         # perform pca
-    #         #pca = KernelPCA(dataloader, RBF().kernel, 10)
-    #         # project and retrieve the new dataloader with selected feature
-    #         #dataloader_pca = pca.project()
-    #         # multi svc
-    #         time0 = time.time()
-    #         multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True, verbose = 0)
-    #         multi_svc.fit()
-    #         accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
-    #         print(f"accuracy test = {accuracy}, with parameters (d, c) = ({d}, {c})")
-    #         time1 = time.time()
-    #         print(" Prediction computed in {}".format(time1 - time0))
+    dataloader = DataLoader(hog_features, Ytr, hog_features_validation, kernel=Polynomial(5, 0.6).kernel, prop=0.8)
 
-    #Xte_gray = transform_to_gray(Xte)
-    #Xte_gray = np.resize(Xte_gray, (2000, 32, 32))
-    #hog_xtr = hog(Xtr_gray, cells_per_block=(1,1), pixels_per_cell=(32, 32), feature_vector=True)
+    #perform pca
+    if args.pca:
+        print("Start pca")
+        pca = KernelPCA(dataloader, RBF().kernel, 500)
+        # project and retrieve the new dataloader with selected feature
+        dataloader_pca = pca.project()
+        dataloader = dataloader_pca
+    
+    # multi svc
+    time0 = time.time()
+    multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
+    multi_svc.fit()
+    accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
+    print(f"accuracy test = {accuracy}")
+    time1 = time.time()
+    print(" Prediction computed in {:.3f} s".format(time1 - time0))
 
-    #hog_features = np.zeros((2000, 324))
-    #for i in range(2000):
-    #    hhg = Histogram_oriented_gradient(Xte_gray[i], block_size=(2,2), cell_size=(8, 8), flatten = True)
-    #    hog_features[i, :] = hhg
-    #predictions = multi_svc.predict(hog_features)
-    #print(predictions)
-    #to_csv(predictions)
-
-    d = 5
-    c = 0.6
-
-    predictions_f = Cross_validation(hog_features, Ytr, hog_features_e, Polynomial(d, c).kernel, C= 0.1, K = 7, parameters = (c, d), print_accuracy = True, return_prediction = True)
-    to_csv(predictions_f)
+    predictions = multi_svc.predict(dataloader.validate_set)
+    print(predictions)
+    to_csv(predictions)
