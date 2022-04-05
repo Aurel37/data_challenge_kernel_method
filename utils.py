@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import datetime
 
-
 def transform_to_gray(dataset):
     n, d = dataset.shape
     grayscale = np.zeros((n, 1024))
@@ -24,5 +23,5 @@ def to_csv(pred):
     n = len(pred)
     date = datetime.datetime.now()
     index = np.arange(1, n+1)
-    pred_format = np.array([index, pred]).T
+    pred_format = np.array([index, pred],dtype=int).T
     pd.DataFrame(pred_format, columns=["Id","Prediction"]).to_csv(f'predictions/pred_Sebastien_Aurelien_{date.strftime("%Y-%m-%d %H:%M")}.csv', index=False)

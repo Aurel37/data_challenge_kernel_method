@@ -1,8 +1,6 @@
-from scipy import optimize
 import numpy as  np
 import cvxpy as cp
 from cvxopt import matrix
-from cvxopt.blas import dot
 from cvxopt import solvers
 
 class KernelSVC:
@@ -52,7 +50,7 @@ class KernelSVC:
             alpha = solvers.qp(P,q,G,h,A,b)
             #print( npalpha['x'] )
             self.alpha = np.ravel(alpha['x']) 
-            
+
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]

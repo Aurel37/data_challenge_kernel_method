@@ -1,14 +1,16 @@
 import numpy as np
 from scipy.linalg import eigh
+import matplotlib.pyplot as plt
 
 class KernelPCA:
 
-    def __init__(self, dataloader, kernel, n_dim):
-        self.dataloader = dataloader.copy()
+    def __init__(self, dataloader, kernel, n_dim, display=False):
+        self.dataloader = dataloader.copy_data()
 
         # kernel should be a function here
         self.kernel = kernel
         self.n_dim = n_dim
+        self.display = display
     
     def center_kernel(self, X):
         """center kernel (mean) before pca
@@ -33,16 +35,23 @@ class KernelPCA:
         # sort eigenvalues in descending order to retrieve 
         # the first n_dim eigenvect
         order_eigh = eigenvals.argsort()[::-1]
-        order_eigh = order_eigh[:self.n_dim]
         
+        if self.display:
+            plt.bar(np.arange(len(order_eigh)), np.abs(eigenvals[order_eigh]))
+            plt.show()
+        order_eigh = order_eigh[:self.n_dim]
         alpha = eigenvects[order_eigh, :].T/np.sqrt(eigenvals[order_eigh])
         return np.dot(K, alpha)
 
     def project(self):
         """return the result of the pca projection
         """
-        self.dataloader.dataset = self.PCA(self.dataloader.dataset)
-        self.dataloader.K = self.kernel(self.dataloader.dataset_train)
-        self.dataloader.kernel = self.kernel
+        N, _ = self.dataloader.dataset.shape
+        dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.validate_set], axis=0)
+        print(dataset_plain.shape)
+        dataset_reduced = self.PCA(dataset_plain)
+        self.dataloader.dataset = dataset_reduced[:N,:]
+        self.dataloader.validate_set =  dataset_reduced[N:,:]
+        self.dataloader.K = self.dataloader.kernel(self.dataloader.dataset_train)
         return self.dataloader
         

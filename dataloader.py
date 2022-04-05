@@ -2,27 +2,23 @@ import numpy as np
 
 class DataLoader:
 
-    def __init__(self, dataset, target, kernel=None, prop=0.8, shuffle=False):
+    def __init__(self, dataset, target, validate_set, kernel=None, K=None, prop=0.8):
         if not(target.shape[0] == dataset.shape[0]):
             raise ValueError("target and dataset must have same x-axis size")
         self.N = dataset.shape[0]
-        self.shuffle = shuffle
         self.prop = prop
         self.dataset = dataset
         self.target = target
         # self.K = self.kernel(self.dataset, self.dataset)
         # avoid to recompute the kernel at each step
-        self.K = None
+        self.K = K
         # kernel should be a function here
         self.kernel = kernel
         # keep tracks of kernel to avoid compute it
         # every time
-        
-        if shuffle:
-            arange = np.arange(self.N)
-            np.random.shuffle(arange)
-            self.dataset = self.dataset[arange, :]
-            self.target = self.target[arange]
+
+        # set with unknown label
+        self.validate_set = validate_set
     
     @property
     def kernel(self):
@@ -65,4 +61,5 @@ class DataLoader:
         """
         dataset = self.dataset.copy()
         target = self.target.copy()
-        return DataLoader(dataset, target, self.prop, shuffle=False)
+        validate_set = self.validate_set.copy()
+        return DataLoader(dataset, target, validate_set, kernel=self.kernel, K=self.K, prop=self.prop)
