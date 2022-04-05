@@ -2,12 +2,13 @@ from locale import currency
 import numpy as np
 from binary_svm import KernelSVC
 import time
+from dataloader import DataLoader
 
 class MultiKernelSVC:
     """Multi Class kernel SVC
     """
 
-    def __init__(self, C, dataloader, class_num, one_to_one=False, epsilon = 1e-4):
+    def __init__(self, C, dataloader, class_num, one_to_one=False, epsilon = 1e-4, verbose = -1):
         self.C = C 
         # kernel should be a function here                          
         self.kernel = dataloader.kernel    
@@ -20,14 +21,16 @@ class MultiKernelSVC:
         self.dataloader = dataloader
         self.class_num = class_num
         self.one_to_one = one_to_one
+        self.verbose = verbose
 
-    def fit(self, accuracy_print=False):
+    def fit(self):
         """train the multiclass svms using one vs all
         """
         if not self.one_to_one:
             # one vs all
             for cl in range(self.class_num):
-                print(f"\r cl = {cl}", end="")
+                if self.verbose > 0:
+                    print(f"\r cl = {cl}", end="")
                 svc = KernelSVC(self.C, self.kernel, self.epsilon)
                 target = self.dataloader.target_train.copy()
                 target[self.dataloader.target_train == cl] = 1
@@ -36,15 +39,13 @@ class MultiKernelSVC:
                 self.SVMs.append(svc)
         else:
             # one vs one
-            # current_cl = 1
-            # class_available = np.arange(current_cl, self.class_num)
+
             size = size = self.class_num*(self.class_num - 1)/2
             current_index = 1
-            print("Begin Fit SVM oVo")
+            if self.verbose > 2:
+                print("Begin Fit SVM oVo")
             for class_i  in range(self.class_num):
-                
                 for class_j in range(class_i + 1, self.class_num):
-                    #print('#' * int((current_index)/size * 50))
                     keep_idx = (self.dataloader.target_train == class_j) | (self.dataloader.target_train == class_i)
                     target = self.dataloader.target_train[keep_idx]
                     binary_target = np.ones(target.shape)
@@ -52,27 +53,30 @@ class MultiKernelSVC:
 
                     binary_target[target == class_i] = -1
                     kernel_ij = self.K[keep_idx,:][:,keep_idx]
+
                     svc = KernelSVC(self.C, self.kernel, self.epsilon)
                     svc.fit(train_set, binary_target, kernel_ij)
                     acc = ""
-                    if accuracy_print:
+                    if self.verbose > 1:
                         accuracy = svc.accuracy(train_set, binary_target)
                         acc = f" SVM accuracy training : {accuracy:.3f}"
                     self.SVMs.append(svc)
-
-                    print('\rProgress [{0:<50s}] current class : {1}/{2}. {3} {4}'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1, acc, " "*3), end="")
+                    if self.verbose > 0:
+                        print('\rProgress [{0:<50s}] current class : {1}/{2}. {3}'.format('#' * int((current_index)/size * 50), class_i+1, class_j+1, acc), end="")
                     current_index += 1
-        print()
+        if self.verbose > 0:
+            print()
     
     def accuracy(self, X, y):
         n, _ = X.shape
         prediction = self.predict(X)
         return np.sum(prediction == y)/n
     
-    def predict(self, X):
+    def predict(self, X, return_score = False):
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
-            print("Begin predict from oVo to oVo")
+            if self.verbose > 2:
+                print("Begin predict from oVo to oVo")
             n, _ = X.shape
             predictions_oVo = np.zeros((n, len(self.SVMs)))
             scores_oVo = np.zeros((n, len(self.SVMs)))
@@ -84,7 +88,8 @@ class MultiKernelSVC:
             current_index = 0
             for class_i  in range(self.class_num):
                     for class_j in range(class_i + 1, self.class_num):
-                        print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
+                        if self.verbose > 0:
+                            print('\rProgress [{0:<50s}] current class : {1}'.format('#' * int((current_index)/size * 50), class_i+1), end="")
                         svc = self.SVMs[current_index]
                         time0 = time.time()
                         predictions_oVo[:, current_index], scores_oVo[:, current_index] = svc.predict(X, return_score = True)
@@ -95,8 +100,8 @@ class MultiKernelSVC:
                         predictions[predictions_oVo[:, current_index] == -1, class_i] += 1
                         predictions[predictions_oVo[:, current_index] == 1, class_j] += 1
                         current_index += 1
-
-            print()
+            if self.verbose > 0:
+                print()
             # Here, we have for each samples the number of votes per class. 
             # We will use the scores to solve equality problems 
             # So, put scores in [-1/3; 1/3] so that is does not change the number 
@@ -105,10 +110,68 @@ class MultiKernelSVC:
             scores /= (3*(np.abs(scores) + 1))
 
             predictions = predictions + scores
-            return np.argmax(predictions, axis= 1)
+            idx_max = np.argmax(predictions, axis= 1)
+            predictions = np.max(predictions, axis= 1)
+            if return_score:
+                return idx_max, predictions
+            else:
+                return idx_max
 
         else:
             for cl in range(self.class_num):
                 cl_prediction = self.SVMs[cl].predict(X)
                 predictions[cl_prediction == 1] = cl
             return predictions
+
+def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = False, parameters = None, return_prediction = False):
+    """
+    Divide the dataset in K parts for cross validation
+    Can print the average accuracy
+    Can also return the prediction on Xte"""
+
+    N = Xtr.shape[0]   
+    proba = 1/K
+    shift = int(N/K)
+    idx = np.arange(N)
+    # Shuffe the index for more generalization
+    np.random.shuffle(idx)
+
+    accuracy = 0
+    SVMS = []
+    # Cross Validation
+    for k in range(K):
+        # Shift the index for changing the validation and training set
+        idx_k = (idx + k*shift)%N
+        # Compute the dataloader 
+        dataloader = DataLoader(Xtr[idx_k], Ytr[idx_k], kernel=kernel, prop=1 - proba)
+        # Do the SVM
+        multi_svc = MultiKernelSVC(C, dataloader, 10, one_to_one=True, verbose = 0)
+        multi_svc.fit()
+        SVMS.append(multi_svc)
+        # Compute accuracy of the SVM
+        accuracy_k = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
+        accuracy += accuracy_k
+
+    accuracy /= K
+    if print_accuracy :
+        print(f"accuracy test = {accuracy}, with parameters (d, c) = ({parameters})")
+
+    if return_prediction : 
+        # Compute the prediction by computing prediction of each SVM, and take the main vote
+        predictions = np.zeros((Xte.shape[0], K))
+        scores = np.zeros((Xte.shape[0], K))
+        for k in range(K):
+            a, b = SVMS[k].predict(Xte, True)
+            predictions[:, k] = a
+            scores[:, k] = b
+        
+        predictions_f = np.zeros(Xte.shape[0])
+        scores /= (3*(np.abs(scores) + 1))
+        predictions += scores
+        for im in range(Xte.shape[0]):
+            vote = np.zeros(10)
+            for k in range(K):
+                vote[int(predictions[im, k])] += 1
+            max_index = np.argwhere(vote == np.amax(max))
+            predictions_f[im] = np.argmax(vote)
+        return predictions_f
