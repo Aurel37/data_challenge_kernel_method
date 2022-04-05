@@ -72,7 +72,7 @@ class MultiKernelSVC:
         prediction = self.predict(X)
         return np.sum(prediction == y)/n
     
-    def predict(self, X):
+    def predict(self, X, return_score = False):
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
             if self.verbose > 2:
@@ -110,7 +110,12 @@ class MultiKernelSVC:
             scores /= (3*(np.abs(scores) + 1))
 
             predictions = predictions + scores
-            return np.argmax(predictions, axis= 1)
+            idx_max = np.argmax(predictions, axis= 1)
+            predictions = np.max(predictions, axis= 1)
+            if return_score:
+                return idx_max, predictions
+            else:
+                return idx_max
 
         else:
             for cl in range(self.class_num):
@@ -156,11 +161,14 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
         predictions = np.zeros((Xte.shape[0], K))
         scores = np.zeros((Xte.shape[0], K))
         for k in range(K):
-            predictions[:, k], scores[:, k] = SVMS[k].predict(Xte)
-            
+            a, b = SVMS[k].predict(Xte, True)
+            predictions[:, k] = a
+            scores[:, k] = b
+        
         predictions_f = np.zeros(Xte.shape[0])
         scores /= (3*(np.abs(scores) + 1))
-        predictions_f += scores
+        print(scores.shape)
+        predictions += scores
         for im in range(Xte.shape[0]):
             vote = np.zeros(10)
             for k in range(K):
