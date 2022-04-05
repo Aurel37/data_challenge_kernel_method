@@ -2,10 +2,9 @@ from platform import architecture
 from kernel_pca import KernelPCA
 from dataloader import DataLoader
 from kernel import RBF, Polynomial
-from multiclass_svm import MultiKernelSVC
+from multiclass_svm import MultiKernelSVC, Cross_validation
 from utils import transform_to_gray, to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
-from skimage.feature import hog
 
 
 
@@ -24,31 +23,39 @@ if __name__ == "__main__":
     # and test with a proportion of 0.8 here
 
     Xtr_im = transform_to_image(Xtr)
-
+    Xte_im = transform_to_image(Xte)
     hog_features = np.zeros((5000, 1764))
     for i in range(5000):
         hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
+    
+    hog_features_e = np.zeros((2000, 1764))
+    for i in range(2000):
+       hhg = Histogram_oriented_gradient(Xte_im[i, :], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
+       hog_features_e[i, :] = hhg
 
-    dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(5, 2).kernel, prop=0.8, shuffle=False)
+    clist = {
+        2: [0.2 + i * 0.2 /14 for i in range(15)],
+        3: [i * 0.3/14 for i in range(15)],
+        4: [i * 0.3/14 for i in range(15)],
+        5: [0.1 + i * 0.2/14 for i in range(15)] + [0.5 + i * 0.2/14 for i in range(15)],
+    }
 
-    # perform pca
-    #pca = KernelPCA(dataloader, RBF().kernel, 10)
-    # project and retrieve the new dataloader with selected feature
-    #dataloader_pca = pca.project()
-    # multi svc
-    time0 = time.time()
-    multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
-    multi_svc.fit(True)
-    accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
-    print(f"accuracy test = {accuracy}")
-    time1 = time.time()
-    print(" Prediction computed in {}".format(time1 - time0))
+    # for d in [2, 3, 4, 5]:
+    #     for c in clist[d]:
+    #         dataloader = DataLoader(hog_features, Ytr, kernel=Polynomial(d, c).kernel, prop=0.8, shuffle=False)
 
-    Xtr_im = transform_to_image(Xtr)
-
-    hog_features = np.zeros((5000, 1764))
-    for i in range(5000):
-        hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
+    #         # perform pca
+    #         #pca = KernelPCA(dataloader, RBF().kernel, 10)
+    #         # project and retrieve the new dataloader with selected feature
+    #         #dataloader_pca = pca.project()
+    #         # multi svc
+    #         time0 = time.time()
+    #         multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True, verbose = 0)
+    #         multi_svc.fit()
+    #         accuracy = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
+    #         print(f"accuracy test = {accuracy}, with parameters (d, c) = ({d}, {c})")
+    #         time1 = time.time()
+    #         print(" Prediction computed in {}".format(time1 - time0))
 
     #Xte_gray = transform_to_gray(Xte)
     #Xte_gray = np.resize(Xte_gray, (2000, 32, 32))
@@ -61,3 +68,9 @@ if __name__ == "__main__":
     #predictions = multi_svc.predict(hog_features)
     #print(predictions)
     #to_csv(predictions)
+
+    d = 5
+    c = 0.6
+
+    predictions_f = Cross_validation(hog_features, Ytr, hog_features_e, Polynomial(d, c).kernel, C= 0.1, K = 7, parameters = (c, d), print_accuracy = True, return_prediction = True)
+    to_csv(predictions_f)

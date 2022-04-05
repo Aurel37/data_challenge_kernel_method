@@ -84,3 +84,4 @@ class KernelSVC:
         n, _ = X.shape
         prediction = self.predict(X)
         return np.sum(prediction == y)/n
+
