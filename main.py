@@ -1,7 +1,7 @@
 from platform import architecture
 from kernel_pca import KernelPCA
 from dataloader import DataLoader
-from kernel import Linear, RBF, Polynomial
+from kernel import RBF, Polynomial
 from multiclass_svm import MultiKernelSVC
 from utils import transform_to_gray, to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
@@ -23,8 +23,6 @@ if __name__ == "__main__":
     # load data, DataLoader automatically divide the dataset in train
     # and test with a proportion of 0.8 here
 
-
-    Xtr_gray = np.resize(Xtr, (5000, 32, 32))
     Xtr_im = transform_to_image(Xtr)
 
     hog_features = np.zeros((5000, 1764))
@@ -46,6 +44,11 @@ if __name__ == "__main__":
     time1 = time.time()
     print(" Prediction computed in {}".format(time1 - time0))
 
+    Xtr_im = transform_to_image(Xtr)
+
+    hog_features = np.zeros((5000, 1764))
+    for i in range(5000):
+        hog_features[i, :] = Histogram_oriented_gradient(Xtr_im[i], cell_size=(4, 4), block_size=(2, 2), method = 'L1', multichannel= True)
 
     #Xte_gray = transform_to_gray(Xte)
     #Xte_gray = np.resize(Xte_gray, (2000, 32, 32))
