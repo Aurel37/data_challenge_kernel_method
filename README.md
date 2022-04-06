@@ -20,8 +20,8 @@ You can also run the main file with two more arguments :  ```python main.py -k``
 # Methods implemented
 
 The methods used for this challenge are :
-    - Kernel PCA
-    - Kernel Kmeans
-    - HOG
-    - MultiClass kernel SVM
+- Kernel PCA
+- Kernel Kmeans
+- HOG
+- MultiClass kernel SVM
 
