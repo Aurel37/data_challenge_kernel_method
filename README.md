@@ -16,7 +16,7 @@ The best is to create a virtual envirnonement and to install the dependencies lo
 
 To run the code you simply need : ```python start.py```
 
-You can also run the main file with two more arguments :  ```python main.py -k``` if you want to test the kmeans or ```python main.py -h``` if you want to test the pca extraction after the hog extraction.
+You can also run the main file with two more arguments :  ```python main.py -k``` if you want to test the kmeans or ```python main.py -p``` if you want to test the pca extraction after the hog extraction.
 
 # Methods implemented
 
