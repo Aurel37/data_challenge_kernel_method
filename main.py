@@ -6,7 +6,7 @@ from kernel_pca import KernelPCA
 from dataloader import DataLoader
 from kernel import RBF, Polynomial
 from multiclass_svm import MultiKernelSVC, Cross_validation
-from utils import transform_to_gray, to_csv, transform_to_image
+from utils import to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
 from kmeans import KMeans
 
@@ -22,13 +22,13 @@ if __name__ == "__main__":
     # and test with a proportion of 0.8 here
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--pca", help="perform pca on the whole data (always after hog)", action="store_true")
-    parser.add_argument("-k", "--kmeans", help="try kmeans")
+    parser.add_argument("-k", "--kmeans", help="try kmeans", action="store_true")
     args = parser.parse_args()
 
     # test kmeans algo 
     if args.kmeans:
         dataloader_kmeans = DataLoader(Xtr, Ytr, prop=0.8)
-        kmeans = KMeans(dataloader_kmeans, Polynomial(5, 0.6).kernel)
+        kmeans = KMeans(dataloader_kmeans, RBF().kernel)
         kmeans.spectral_cluestering(300)
 
     Xtr_im = transform_to_image(Xtr)
@@ -48,10 +48,11 @@ if __name__ == "__main__":
     #perform pca
     if args.pca:
         print("Start pca")
-        pca = KernelPCA(dataloader, RBF().kernel, 500)
+        pca = KernelPCA(dataloader, RBF().kernel, 500, True)
         # project and retrieve the new dataloader with selected feature
         dataloader_pca = pca.project()
         dataloader = dataloader_pca
+    
     if False:
 
     # multi svc

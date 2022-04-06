@@ -4,6 +4,21 @@ import matplotlib.pyplot as plt
 
 
 class KMeans(KernelPCA):
+    """Kmeans algorithms, inherit from KernelPCA using the kernel "kernel"
+
+    Methods:
+        kmeans : perform the kmeans algorithms
+        spectral_clustering : perform the kernel kmeans algo 
+        using spectral clustering
+        accuracy : compute accuracy
+
+    Attributes:
+        dataloader : np.array
+        kernel : func
+        n_dim : float (useless here for constitency)
+        n_cluster : int
+        display : bool (useless here for constitency)
+    """
 
     def __init__(self, dataloader, kernel, n_dim=1, n_cluster=10, display=False):
         super().__init__(dataloader, kernel, n_dim, display)
@@ -11,6 +26,16 @@ class KMeans(KernelPCA):
         self.clusters = None
 
     def kmeans(self, X, n_iter):
+        """classic kmeans algorithms for the dataset X
+
+        Parameters:
+            X : np.array
+            n_iter : int
+        
+        Return:
+            mu : np.array, then means found by kmeans
+            clusters : np.array the clusters assigned to each vectors
+        """
         N, d = X.shape
         mu = np.random.multivariate_normal(np.mean(X, axis=0), np.eye(self.n_cluster), size=self.n_cluster)
         for i in range(n_iter):
@@ -23,6 +48,13 @@ class KMeans(KernelPCA):
         return mu, clusters + 1
 
     def spectral_cluestering(self, n_iter):
+        """perform the kernel kmeans algo 
+        using spectral clustering and compute
+        accuracy
+
+        Parameters:
+            n_iter : int
+        """
         self.PCA(self.dataloader.dataset)
         Z = self.eigenvectors[:self.n_cluster, :]/np.abs(self.eigenvectors[:self.n_cluster, :])
         Z = Z.T
@@ -30,38 +62,6 @@ class KMeans(KernelPCA):
         print("accuracy kmeans = ", self.accuracy())
     
     def accuracy(self):
+        """Compute accuracy for the dataloader
+        """
         return np.sum(self.clusters == self.dataloader.target)/self.clusters.shape[0]
-
-# test the kmeans
-if __name__ == "__main__":
-    mean_1 = np.array([-5, -5])
-    mean_2 = np.array([2, 2])
-    mean_3 = np.array([1, 1])
-
-    cov_1 = np.array([[1,0], [0,1]])
-    cov_2 = np.array([[.1,0], [0,.1]])
-    cov_3 = np.array([[3,0], [0,3]])
-
-
-    test_2 = np.random.multivariate_normal(mean_1, cov_1, size=20)
-    test_1 = np.random.multivariate_normal(mean_2, cov_2, size=20)
-
-    test = np.concatenate((test_1, test_2), axis=0)
-    mu = np.random.multivariate_normal(mean_3, cov_3, size=2)
-    for i in range(20):
-        a = np.linalg.norm(mu[None, :, :] - test[:,None,:], axis=2)
-        clusters = np.argmin(np.linalg.norm(mu[None, :, :] - test[:,None,:], axis=2), axis=1)
-        for k in range(2):
-            index = np.argwhere(clusters == k)
-            mu[k,:] = np.mean(test[index, :], axis=0)
-    x = [[] for i in range(2)]
-    y = [[] for i in range(2)]
-    for z in range(40):
-        x[clusters[z]].append(test[z,0])
-        y[clusters[z]].append(test[z,1])
-
-    for i in range(2):
-        plt.plot(x[i], y[i], 'x')
-
-    plt.plot(mu[:,0],mu[:,1], 'o')
-    plt.show()

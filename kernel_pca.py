@@ -3,6 +3,20 @@ from scipy.linalg import eigh
 import matplotlib.pyplot as plt
 
 class KernelPCA:
+    """Kernel PCA using the kernel "kernel"
+
+    Methods:
+        center_kernel : center the kernel before computation
+        PCA : compute pca
+        project : return the result of the pca projection
+
+    Attributes:
+        dataloader : np.array
+        kernel : func
+        n_dim : float
+        n_cluster : int
+        display : bool, display the eigenvalues
+    """
 
     def __init__(self, dataloader, kernel, n_dim, display=False):
         self.dataloader = dataloader.copy_data()
@@ -24,6 +38,12 @@ class KernelPCA:
     
     def PCA(self, X):
         """compute pca
+
+        Parameters:
+            X : np.array
+        
+        Return:
+            The kernel pca on X
         """
         K = self.center_kernel(X)
         eigenvals, eigenvects = eigh(K)
@@ -50,15 +70,16 @@ class KernelPCA:
 
     def project(self):
         """return the result of the pca projection
+        on the dataset of the dataloader
         """
         N, _ = self.dataloader.dataset.shape
-        if self.dataloader.validate_set is not None:
-            dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.validate_set], axis=0)
+        if self.dataloader.test_set is not None:
+            dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.test_set], axis=0)
         else:
             dataset_plain = self.dataloader.dataset
         dataset_reduced = self.PCA(dataset_plain)
         self.dataloader.dataset = dataset_reduced[:N,:]
-        self.dataloader.validate_set =  dataset_reduced[N:,:]
+        self.dataloader.test_set =  dataset_reduced[N:,:]
         self.dataloader.K = self.dataloader.kernel(self.dataloader.dataset_train)
         return self.dataloader
         

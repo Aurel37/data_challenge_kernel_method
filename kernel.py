@@ -4,11 +4,31 @@ Gaussian kernel/Polynomial Kernel
 import numpy as np
 
 class RBF:
+    """Polynomial kernel (x.T@x + c)^d
+
+    Methods:
+        kernel : compute the kernel
+
+    Attributes:
+        k : None, here for constitency
+        sigma : float
+    """
+
     def __init__(self, sigma=1.):
         self.sigma = sigma  ## the variance of the kernel
         #self.k = None
         
     def kernel(self,X,Y = None):
+        """Compute the kernel k(X,Y) 
+        if Y is not None, k(X,X) otherwise
+
+        Parameters:
+            X : np.array
+            Y : np.array
+        
+        Return:
+            a gaussian kernel in an array
+        """
         ## Input vectors X and Y of shape Nxd and Mxd
         # difference between all vectors X and Y
 
@@ -35,11 +55,33 @@ class RBF:
 
 
 class Polynomial:
+    """Polynomial kernel (x.T@x + c)^d
+
+    Methods:
+        kernel : compute the kernel
+
+    Attributes:
+        k : None, here for constitency
+        d : float 
+        c : float
+    """
+
     def __init__(self, d = 2, c = 0):
         self.k = None
         self.d = d
         self.c = c
+
     def kernel(self,X,Y=None):
+        """Compute the kernel k(X,Y) 
+        if Y is not None, k(X,X) otherwise
+
+        Parameters:
+            X : np.array
+            Y : np.array
+        
+        Return:
+            a polynomial kernel in an array
+        """
         # matrixes of inner products
         if Y is not None:
             x_tens_y = np.power((X.dot(Y.T) + self.c), self.d)
