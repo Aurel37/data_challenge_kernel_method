@@ -7,9 +7,9 @@ Data challenge for the MVA course kernel method
 You need all the classical module : numpy, scipy... as well as the two optimizations module : cvxopt and cvxpy.
 
 The best is to create a virtual envirnonement and to install the dependencies locally with python :
-    - ```python -m venv env```
-    - ```source env/bin/activate```
-    - ```pip install -r requirements```
+- ```python -m venv env```
+- ```source env/bin/activate```
+- ```pip install -r requirements```
 
 # Run the code
 
