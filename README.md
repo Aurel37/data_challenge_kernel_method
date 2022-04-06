@@ -1,3 +1,4 @@
+authors : Sébastien Morel and Aurélien Pion
 # data_challenge_kernel_method
 
 Data challenge for the MVA course kernel method
