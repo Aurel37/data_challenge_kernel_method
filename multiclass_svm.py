@@ -1,4 +1,3 @@
-from locale import currency
 import numpy as np
 from binary_svm import KernelSVC
 import time

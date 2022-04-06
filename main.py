@@ -10,9 +10,6 @@ from utils import to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
 from kmeans import KMeans
 
-
-
-
 Xtr = np.array(pd.read_csv('Xtr.csv',header=None,sep=',',usecols=range(3072)))
 Xte = np.array(pd.read_csv('Xte.csv',header=None,sep=',',usecols=range(3072)))
 Ytr = np.array(pd.read_csv('Ytr.csv',sep=',',usecols=[1])).squeeze()
