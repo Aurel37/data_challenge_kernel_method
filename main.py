@@ -28,6 +28,8 @@ if __name__ == "__main__":
         kmeans = KMeans(dataloader_kmeans, RBF().kernel)
         kmeans.spectral_cluestering(300)
 
+    
+
     Xtr_im = transform_to_image(Xtr)
     Xte_im = transform_to_image(Xte)
     hog_features = np.zeros((5000, 1764))
@@ -45,10 +47,14 @@ if __name__ == "__main__":
     #perform pca
     if args.pca:
         print("Start pca")
-        pca = KernelPCA(dataloader, RBF().kernel, 500, True)
+        pca = KernelPCA(DataLoader(Xtr, Ytr, kernel=Polynomial(5, 0.6).kernel, prop=0.8), RBF().kernel, 500)
         # project and retrieve the new dataloader with selected feature
         dataloader_pca = pca.project()
         dataloader = dataloader_pca
+        multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
+        multi_svc.fit()
+        accuracy = multi_svc.accuracy(dataloader.dataset_validate, dataloader.target_validate)
+        print(f"accuracy test with pca = {accuracy}")
     
     if False:
 
