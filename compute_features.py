@@ -1,10 +1,6 @@
 import numpy as np
 import utils 
 
-import pandas as pd
-from matplotlib import pyplot as plt
-
-
 def compute_gradient(image):
     """ 
     Compute the arrays of gradient in dx and dy
@@ -55,26 +51,47 @@ def histogram_gradient_cell(orientation, magnitude, theta_beg, theta_end):
     return sum_magnetude/(W * H)
 
 def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multichannel = False):
+    """
+    Compute the Histrogram of gradient by computing the magnitude and orientation 
+    Then it stacks the magnitude of same orientation cells
+
+    Args:
+        gradient_dx : discrete derivation in the horizontal axis
+        gradient_dy : discrete derivation in the vertical axis
+        cell_size : tuple of the shape of the cells in the image
+        resolution (int) : number of bins for the histogram
+        multichannel (bool, optional): . Defaults to False.
+
+    Returns:
+        Histogram of orientation for each cell of the image
+    """
 
     if multichannel:
         W, H, C = gradient_dx.shape
     else:
         W, H = gradient_dx.shape
+
+    # Define the grid of cell 
     dw, dh = cell_size
     N = int(W // dw)
     M = int(H // dh)
 
+    # Histrogram that we will iteratively compute
     orientation_histo = np.zeros((N, M, resolution))
+    # step in angle between to bins of the histogram
     dtheta = 180/resolution
     
     if multichannel :
+        # Compute the magnitude and orientation for all channel
         magnitudes_all = np.zeros(gradient_dx.shape)
         orientations_all = np.zeros(gradient_dx.shape)
         for c in range(C):
             magnitudes_all[:, :, c] = get_magnitude(gradient_dx[:, :, c], gradient_dy[:, :, c])
             orientations_all[:, :, c] = get_orientation(gradient_dx[:, :, c], gradient_dy[:, :, c])
         
+        # Keep only the channel with higher magnetude
         keep_c = np.argmax(magnitudes_all, axis = -1)
+        # Need a meshgrid in order to retrieve the argmax correctly on the array
         rows, cols = np.meshgrid(np.arange(W),
                              np.arange(H),
                              indexing='ij',
@@ -90,8 +107,10 @@ def histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multicha
         theta_end = dtheta*(t + 1)
         for n in range(N):
             for m in range(M):
+                # Compute the value for each cell
                 orientation_cell = orientations[n*dw :(n+1)*dw, m*dh: (m +1)*dh]
                 magnitude_cell = magnitudes[n*dw :(n+1)*dw, m*dh: (m +1)*dh]
+                # Call the computation of the histogram for one cell
                 orientation_histo[n, m, t] = histogram_gradient_cell(orientation_cell, magnitude_cell, theta_beg, theta_end)
 
     return orientation_histo
@@ -112,6 +131,9 @@ def normalization(block, method, eps = 1e-5):
     return block_normalized
 
 def normalizing_blocks(hog, block_size, method):
+    """
+    Get al the block of the images and call the function that normalize each blocks
+    """
     N, M, O = hog.shape
     brows, bcols = block_size
 
@@ -128,44 +150,24 @@ def normalizing_blocks(hog, block_size, method):
     return hog_normalized
 
 def Histogram_oriented_gradient(image, resolution = 9, cell_size = (4, 4), block_size= (4, 4), multichannel = False, method = 'L1', flatten = True, visualize = True):
+    """
+    Compute the Histogram of Oriented Gradient 
+    Inspired by Sckimage code that help us to deeply understand the method and its specificity
+    """
+    # Important to change the type since we compute gradient
     image = image.astype(float)
+
+    # Need to deal with mulltichannel images
     if multichannel:
         gradient_dx, gradient_dy = compute_gradient_multi_channel(image)
-
     else:
         gradient_dx, gradient_dy = compute_gradient(image)
     
+    # Call the computation of the features then the normalization function
     hog = histogram_gradient(gradient_dx, gradient_dy, cell_size, resolution, multichannel)
     hog_normalize = normalizing_blocks(hog, block_size, method)
+
+    # We deal with images so 2D information but we may want to flatten it for our classifier 
     if flatten:
         return hog_normalize.flatten()
     return hog_normalize
-
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    from skimage.feature import hog
-    from skimage import data, exposure
-
-
-    image = data.astronaut()
-    vis = True
-    fd, hog_image = Histogram_oriented_gradient(image, resolution = 9, cell_size = (8, 8), block_size= (4, 4), multichannel = True, flatten = False, visualize = vis)
-    #fd, hog_image = hog(image, orientations=9, pixels_per_cell=(8, 8),  cells_per_block=(1, 1), visualize=True, channel_axis=-1)
-
-    if vis :
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
-
-        ax1.axis('off')
-        ax1.imshow(image)
-        ax1.set_title('Input image')
-
-        # Rescale histogram for better display
-        hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 10))
-        ax2.axis('off')
-        ax2.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-        ax2.set_title('Input image')
-
-        plt.show()
