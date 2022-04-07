@@ -4,6 +4,17 @@ from cvxopt import matrix
 from cvxopt import solvers
 
 class KernelSVC:
+    """Binary kernel SVM
+    
+    Attributes:
+        C : float, regularization parameter
+        kernel : func
+        alpha : np.array, prediction vector
+        support : np.array, support vectors
+        epsilon : float, selection parameters
+        for the support vectors
+        solver : string, "cvxopt" or "cp"
+    """
     
     def __init__(self, C, kernel, epsilon = 1e-3, solver="cvxopt"):
         self.C = C                               
@@ -11,11 +22,18 @@ class KernelSVC:
         self.alpha = None
         self.support = None
         self.epsilon = epsilon
-        self.norm_f = None
         self.solver = solver
     
     def fit(self, X, y, K):
-        #### You might define here any variable needed for the rest of the code
+        """fit the svm (inspired of the code used during the homework)
+        the main difference is about the optimizer used
+
+        Parameters:
+            X : np.array/ dataset
+            y : np.array/ target
+            K : np.array/ the gram matrix 
+            (to speed up computation already computed)
+        """
         N = len(y)
         diag_y = np.zeros((N,N))
         for i in range(N):
@@ -30,6 +48,7 @@ class KernelSVC:
             prob.solve()
             self.alpha = alpha.value
         else:
+            # use cvxopt.qp, fast optimizer
             y_cast = y.astype('float')
             P = matrix(K)
             q = matrix(-y_cast)
@@ -48,26 +67,28 @@ class KernelSVC:
             h = matrix(h)
             solvers.options['show_progress'] = False
             alpha = solvers.qp(P,q,G,h,A,b)
-            #print( npalpha['x'] )
             self.alpha = np.ravel(alpha['x']) 
 
         # support indices
         supportIndices = np.where(np.abs(self.alpha) > self.epsilon)  
         self.alpha = self.alpha[supportIndices]
         y_support = y[supportIndices]
-        self.support = X[supportIndices] #'''------------------- A matrix with each row corresponding to a support vector ------------------'''
+        self.support = X[supportIndices]
         # compute b
         # index of alpha_i to compute b using 
         # the complementary slackness conditions
         kkt_index = np.argmax((self.alpha > 0)*(self.alpha < y_support*self.C))
         self.b = y_support[kkt_index] - self.separating_function(np.array([self.support[kkt_index]]))
         
-    ### Implementation of the separting function $f$ 
     def separating_function(self,x):
+        """Implementation of the separting function f(x)
+
+        Parameters:
+            x : np.array
+        """
         # Input : matrix x of shape N data points times d dimension
         # Output: vector of size N
         return  self.kernel(x, self.support)@self.alpha
-    
     
     def predict(self, X, return_score = False):
         """ Predict y values in {-1, 1} """
@@ -79,6 +100,7 @@ class KernelSVC:
 
 
     def accuracy(self, X, y):
+        """compute accuracy"""
         n, _ = X.shape
         prediction = self.predict(X)
         return np.sum(prediction == y)/n

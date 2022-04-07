@@ -3,6 +3,20 @@ from scipy.linalg import eigh
 import matplotlib.pyplot as plt
 
 class KernelPCA:
+    """Kernel PCA using the kernel "kernel"
+
+    Methods:
+        center_kernel : center the kernel before computation
+        PCA : compute pca
+        project : return the result of the pca projection
+
+    Attributes:
+        dataloader : np.array
+        kernel : func
+        n_dim : float
+        n_cluster : int
+        display : bool, display the eigenvalues
+    """
 
     def __init__(self, dataloader, kernel, n_dim, display=False):
         self.dataloader = dataloader.copy_data()
@@ -11,6 +25,8 @@ class KernelPCA:
         self.kernel = kernel
         self.n_dim = n_dim
         self.display = display
+        self.eigenvectors = None
+        self.eigenvalues = None
     
     def center_kernel(self, X):
         """center kernel (mean) before pca
@@ -22,6 +38,12 @@ class KernelPCA:
     
     def PCA(self, X):
         """compute pca
+
+        Parameters:
+            X : np.array
+        
+        Return:
+            The kernel pca on X
         """
         K = self.center_kernel(X)
         eigenvals, eigenvects = eigh(K)
@@ -39,19 +61,25 @@ class KernelPCA:
         if self.display:
             plt.bar(np.arange(len(order_eigh)), np.abs(eigenvals[order_eigh]))
             plt.show()
+        # store for the kernelmeans
+        self.eigenvectors = eigenvects[order_eigh, :]
+        self.eigenvalues = eigenvals[order_eigh]
         order_eigh = order_eigh[:self.n_dim]
         alpha = eigenvects[order_eigh, :].T/np.sqrt(eigenvals[order_eigh])
         return np.dot(K, alpha)
 
     def project(self):
         """return the result of the pca projection
+        on the dataset of the dataloader
         """
         N, _ = self.dataloader.dataset.shape
-        dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.validate_set], axis=0)
-        print(dataset_plain.shape)
+        if self.dataloader.test_set is not None:
+            dataset_plain = np.concatenate([self.dataloader.dataset, self.dataloader.test_set], axis=0)
+        else:
+            dataset_plain = self.dataloader.dataset
         dataset_reduced = self.PCA(dataset_plain)
         self.dataloader.dataset = dataset_reduced[:N,:]
-        self.dataloader.validate_set =  dataset_reduced[N:,:]
+        self.dataloader.test_set =  dataset_reduced[N:,:]
         self.dataloader.K = self.dataloader.kernel(self.dataloader.dataset_train)
         return self.dataloader
         

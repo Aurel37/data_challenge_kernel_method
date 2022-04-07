@@ -1,11 +1,27 @@
-from locale import currency
 import numpy as np
 from binary_svm import KernelSVC
 import time
 from dataloader import DataLoader
 
 class MultiKernelSVC:
-    """Multi Class kernel SVC
+    """Multi Class kernel SVC on the dataset
+    depicted by a dataloader that has its own
+    kernel
+
+    Methods:
+        C : float, regularization parameter
+        kernel : func
+        class_num : int (10 here)
+        one_to_one : bool perform a one to 
+        one multi svm prediction or not
+        epsilon : float, selection parameters
+        for the support vectors in the binary svm
+        verbose : degree of print needed
+
+    Attributes:
+        fit : construct the predictor for the dataloader (one vs one or one vs all)
+        accuracy : compute accuracy on a dataset with it's target
+        predict : predict using the binary svms computed in the fit (one vs one or one vs all)
     """
 
     def __init__(self, C, dataloader, class_num, one_to_one=False, epsilon = 1e-4, verbose = -1):
@@ -24,7 +40,8 @@ class MultiKernelSVC:
         self.verbose = verbose
 
     def fit(self):
-        """train the multiclass svms using one vs all
+        """train the multiclass svms using one vs one 
+        or one vs all (but very slow)
         """
         if not self.one_to_one:
             # one vs all
@@ -39,7 +56,6 @@ class MultiKernelSVC:
                 self.SVMs.append(svc)
         else:
             # one vs one
-
             size = size = self.class_num*(self.class_num - 1)/2
             current_index = 1
             if self.verbose > 2:
@@ -68,11 +84,16 @@ class MultiKernelSVC:
             print()
     
     def accuracy(self, X, y):
+        """compute accuracy of X linked with
+        the target y
+        """
         n, _ = X.shape
         prediction = self.predict(X)
         return np.sum(prediction == y)/n
     
     def predict(self, X, return_score = False):
+        """predict the labels of X using one vs one or one vs all
+        """
         ### Inspired by the function of SckitLean for OvR Decision Function
         if self.one_to_one:
             if self.verbose > 2:
@@ -149,12 +170,12 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
         multi_svc.fit()
         SVMS.append(multi_svc)
         # Compute accuracy of the SVM
-        accuracy_k = multi_svc.accuracy(dataloader.dataset_test, dataloader.target_test)
+        accuracy_k = multi_svc.accuracy(dataloader.dataset_validate, dataloader.target_validate)
         accuracy += accuracy_k
 
     accuracy /= K
     if print_accuracy :
-        print(f"accuracy test = {accuracy}, with parameters (d, c) = ({parameters})")
+        print(f"accuracy validate = {accuracy}, with parameters (d, c) = ({parameters})")
 
     if return_prediction : 
         # Compute the prediction by computing prediction of each SVM, and take the main vote

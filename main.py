@@ -6,11 +6,9 @@ from kernel_pca import KernelPCA
 from dataloader import DataLoader
 from kernel import RBF, Polynomial
 from multiclass_svm import MultiKernelSVC, Cross_validation
-from utils import transform_to_gray, to_csv, transform_to_image
+from utils import to_csv, transform_to_image
 from compute_features import Histogram_oriented_gradient
-
-
-
+from kmeans import KMeans
 
 Xtr = np.array(pd.read_csv('Xtr.csv',header=None,sep=',',usecols=range(3072)))
 Xte = np.array(pd.read_csv('Xte.csv',header=None,sep=',',usecols=range(3072)))
@@ -21,7 +19,16 @@ if __name__ == "__main__":
     # and test with a proportion of 0.8 here
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--pca", help="perform pca on the whole data (always after hog)", action="store_true")
+    parser.add_argument("-k", "--kmeans", help="try kmeans", action="store_true")
     args = parser.parse_args()
+
+    # test kmeans algo 
+    if args.kmeans:
+        dataloader_kmeans = DataLoader(Xtr, Ytr, prop=0.8)
+        kmeans = KMeans(dataloader_kmeans, RBF().kernel)
+        kmeans.spectral_cluestering(300)
+
+    
 
     Xtr_im = transform_to_image(Xtr)
     Xte_im = transform_to_image(Xte)
@@ -40,10 +47,15 @@ if __name__ == "__main__":
     #perform pca
     if args.pca:
         print("Start pca")
-        pca = KernelPCA(dataloader, RBF().kernel, 500)
+        pca = KernelPCA(DataLoader(Xtr, Ytr, kernel=Polynomial(5, 0.6).kernel, prop=0.8), RBF().kernel, 500)
         # project and retrieve the new dataloader with selected feature
         dataloader_pca = pca.project()
         dataloader = dataloader_pca
+        multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
+        multi_svc.fit()
+        accuracy = multi_svc.accuracy(dataloader.dataset_validate, dataloader.target_validate)
+        print(f"accuracy test with pca = {accuracy}")
+    
     if False:
 
     # multi svc
