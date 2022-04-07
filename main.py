@@ -58,7 +58,7 @@ if __name__ == "__main__":
     
     if False:
 
-    # multi svc
+        # Do directly the multiclass for one split of the dataset
         time0 = time.time()
         multi_svc = MultiKernelSVC(.1, dataloader, 10, one_to_one=True)
         multi_svc.fit()
@@ -71,5 +71,6 @@ if __name__ == "__main__":
         print(predictions)
         to_csv(predictions)
 
-    if True:
+    if False:
+        # If we want to do directly Cross Validation
         pred = Cross_validation(hog_features, Ytr, hog_features_validation, Polynomial(5, 0.6).kernel, C= 0.1, K = 7, print_accuracy = True, parameters = (5, 0.6), return_prediction = True)

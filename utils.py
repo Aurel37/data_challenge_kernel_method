@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 
 def transform_to_gray(dataset):
+    """ grey scaling of RGB images """
     n, d = dataset.shape
     grayscale = np.zeros((n, 1024))
     grayscale = 0.2999*dataset[:,:1024] + 0.587*dataset[:,1024:2048] + 0.114*dataset[:,2048:3072]
@@ -10,6 +11,7 @@ def transform_to_gray(dataset):
 
 
 def transform_to_image(dataset, nb_chanel = 3):
+    """ Restore the 3D dimension of the images of the dataset """ 
     n, d = dataset.shape
     d_channel = int(d / nb_chanel)
     W = int(np.sqrt(d_channel))
@@ -20,6 +22,7 @@ def transform_to_image(dataset, nb_chanel = 3):
 
     
 def to_csv(pred):
+    """ Convert the prediction to csv """
     n = len(pred)
     date = datetime.datetime.now()
     index = np.arange(1, n+1)

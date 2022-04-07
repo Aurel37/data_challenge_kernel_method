@@ -150,7 +150,8 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
     Can print the average accuracy
     Can also return the prediction on Xte"""
 
-    N = Xtr.shape[0]   
+    N = Xtr.shape[0]
+    # Proportion of validation set in the all training set
     proba = 1/K
     shift = int(N/K)
     idx = np.arange(N)
@@ -182,11 +183,11 @@ def Cross_validation(Xtr, Ytr, Xte, kernel, C= 0.1, K = 7, print_accuracy = Fals
         predictions = np.zeros((Xte.shape[0], K))
         scores = np.zeros((Xte.shape[0], K))
         for k in range(K):
-            a, b = SVMS[k].predict(Xte, True)
-            predictions[:, k] = a
-            scores[:, k] = b
+            predictions[:, k], scores[:, k] = SVMS[k].predict(Xte, True)
         
+        # Do as the OvO strategy: count the vote, use score as tie-breaker 
         predictions_f = np.zeros(Xte.shape[0])
+        # Cannot influence the number of votes but can do the tie - breaker
         scores /= (3*(np.abs(scores) + 1))
         predictions += scores
         for im in range(Xte.shape[0]):
