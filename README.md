@@ -12,6 +12,8 @@ The best is to create a virtual envirnonement and to install the dependencies lo
 - ```source env/bin/activate```
 - ```pip install -r requirements```
 
+You need also to add the data files to the repository in order to be able to run our scripts
+
 # Run the code
 
 To run the code you simply need : ```python start.py```
